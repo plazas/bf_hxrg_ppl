@@ -15,6 +15,11 @@ The code is run in ‘lucius’.
 
 The following ASCII files will be created in the directory “out\_dir/<name\_of\_output\_directory>”. Currently, “out_dir” is set to “/projector/aplazas/” in lucius. Use the code "plot_fn.py" to read them and plot them. The figures for the paper come mainly from the PDF file produced after running that code ("plot_fn.py").  
 
+
+jay_relative_size.dat:  Data for Fig. 8
+jay_metric.dat: Data for Fig. 2
+jay_metric_surrounding.dat: Data for Fig. 4
+
 jay\_NORM\_spots.dat
 jay\_NORM\_flats.dat
 jay\_B.dat
@@ -37,7 +42,7 @@ for string in ["center", "n1", "n2", "n3", "n4"]:
 
 ## Parts of the code (from top to bottom): 
 
-### 1. Plotting options 
+#### 1. Plotting options 
 
 ### 2. Function definitions 
 
@@ -173,7 +178,7 @@ Loop over sources:
 
 ### 12. Calculate the mean of the size of the postage stamp in each frame; then calculate relative size to first frame
 
-Figure 4 of paper
+Figure 8 of paper
 
 ### 13. Plots: 
 These won’t be the final plots in the paper. Those are produced by another code (plot_fn.py), using the output ASCII files listed above. 
