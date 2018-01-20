@@ -2,8 +2,7 @@
 Code to measure the BF effect in HXRG detectors using data from JPL's Precision Projector Laboratory at Caltech. This code was used to produce the results in Plazas et al. 2018 (arXiv:1712.06642)
 
 
-
-## Code:  bf_ppl.py 
+## Main code:  bf_ppl.py 
 
 ### Usage of the code: 
 
@@ -13,29 +12,24 @@ The code is run in ‘lucius’.
 
 ### Output: 
 
-The following ASCII files will be created in the directory “out\_dir/<name\_of\_output\_directory>”. Currently, “out_dir” is set to “/projector/aplazas/” in lucius. Use the code "plot_fn.py" to read them and plot them. The figures for the paper come mainly from the PDF file produced after running that code ("plot_fn.py").  
+The following ASCII files will be created in the directory “out\_dir/<name\_of\_output\_directory>” (not an exhaustive list). Currently, “out_dir” is set to “/projector/aplazas/” in lucius. Use the code "plot_fn.py" to read and plot them. The figures for the paper come mainly from the PDF file produced after running that code ("plot_fn.py"). 
 
 
-jay_relative_size.dat:  Data for Fig. 8
-jay_metric.dat: Data for Fig. 2
-jay_metric_surrounding.dat: Data for Fig. 4
+jay\_relative\_size.dat:  Data for Fig. 8
+jay\_metric.dat: Data for Fig. 3  |pixel number| 4 columns: f\_N for each frame |4 columns: error on f\_N per frame | 4 columns: mean signal per frame |
+jay\_metric_surrounding.dat: Data for Fig. 4  Row 1: sum of neighbors; Row 2: central pixel. |row ID| 4 columns: f\_N per frame | 4 columns: error on f\_N per frame |
 
-jay\_NORM\_spots.dat
-jay\_NORM\_flats.dat
-jay\_B.dat
-skip.dat
-jay\_c2\_flats.dat
-jay\_c2\_spots.dat
-jay\_residual\_center\_pixel\_flat.dat
-jay\_diff\_fluxes\_center\_pixel.dat
-jay\_ratio\_fluxes\_center\_pixel.dat
-jay\_median\_flux\_flats\_center\_pixel.dat
-jay\_median\_flux\_spots\_center\_pixel.dat
-jay\_median\_deficit\_flux\_flats\_center_pixel.dat
+jay\_median\_flux\_flats\_pixel\_[1-9].dat and jay_residual_pixel\_[1-9]\_flat.dat: Data for Fig. 2
+
+jay\_B.dat: Data for Figure 9. 
 
 selected\_positions\_centroid.dat:  positions of the selected spots after centroid condition has been satisfied 
 
 bf\_ppl_\out.pdf: PDF file with some plots 
+
+Note: Data for Figure 6 of the paper comes from "jay\_metric.dat" but setting the variable "NORM" to 1 in the code and rerunning it. ("jay\_metric.dat" usually contains f_N, but figure 6 shows f_N without its normalization factor.)
+
+Note: To produced Figure 7, run the code 4 times as described in part 9 below. The data will be in "jay\_metric.dat" files under directories with different names. 
 
 
 ### Parts of the code (from top to bottom): 
@@ -48,7 +42,7 @@ bf\_ppl_\out.pdf: PDF file with some plots
 
 dir = <name\_of\_output\_directory> 
 
-pp = PdfPages(out\_dir+"bf\_ppl\_out.pdf") :this is the name of the output PDF file with plots 
+pp = PdfPages(out\_dir+"bf\_ppl\_out.pdf") :this is the name of the output PDF file. 
 
 sigma_cut : threshold for sigma clipping 
 
@@ -109,6 +103,8 @@ Make sure that the spots and darks have the same exposure time (same number of s
 
 Here the code uses “badger.getRampsFromFiles”  so make sure you can import “badger” or that you at least have the required files in your directory. 
 
+Time along the code is in miliseconds, because it is read from the files produced by the PPL, which record time in thse units. Thus, sometimes we need to multiply by 1000 (c.f., "plot_fn.py") to report time in seconds (as is done in the paper). 
+
 #### 5. Stack data 
 
 If the number of files is less than 40, take the median. If it is larger, split the list in 3, take the median of each part, and then the mean of the last 3 medians. This is to avoid running out of memory. 
@@ -166,10 +162,10 @@ Loop over sources:
             - Calculate difference in rate with respect to first frame, and then normalize to produce the f_N metric: “jay metric”. The vector is  s\_vec\_jay/=NORM
             
              - For the central pixel, calculate the coefficient B : 
-                           new_B = (m/fc)*(NORM/(val0*delta\_t/1000)) 
+                           new_B = (m/fc)\*(NORM/(val0\*delta\_t/1000)) 
                            The parameters used are derived from the fit:  m, m_err=linear_fit_m (samples, s\_vec\_jay, err)
                             Save that “new_B” in a vector; use those numbers to produce histogram of B in paper. 
-                             Note that new_B and b = 2*(c1)*(c2)/fc  are consistent with each other. 
+                             Note that new_B and b = 2\*(c1)\*(c2)/fc  are consistent with each other. 
 
 
 #### 11. After big loop, save files with output data 
@@ -181,10 +177,14 @@ Figure 8 of paper
 #### 13. Plots: 
 These won’t be the final plots in the paper. Those are produced by another code (plot_fn.py), using the output ASCII files listed above. 
 
-
-
 ## Code: plot_fn.py
+
+After running "bf_ppl.py" for different configurations (e.g., simulations, PPL data center, PPL data corner in each Cartesian quadrant), a set of ASCII files is produced. Then "plot_fn.py" reads those files---which are in the directory ASCII\_FILES\_TO\_PLOT---to produce most of the plots that ended up in the paper. 
 
 ## Code: sim.py 
 
-## Code: dfg
+Uses GalSim to produce a simulated 2k by 2k scene with a grid of point sources. The number of spots depends on the size of their individual postage stamps; this can be chaged at the beginning of the code. As input, the code reads the PPL PSF model file provided by Chaz ("chazPSF\_lamda1\_cd3\_f11\_pix1\_noboxcar.fits"). The FITS image will be saved in a direcotry called "output". You can change this in the variable "file\_name". To change the placement of the sources, modify the variable offset as neede (e.g., offset=(ud(), ud()) for random offsets or offset=(0.0, 0.0) for sources perfectly located at the center of the pixel). The simulated scene will be used by the code "hxrg\_simulator.py" to produce simulated ramps. 
+
+## Code: hxrg_simulator.py
+Originally written by Chaz Shapiro. This version has samll modifications to add BF (from the Power Law model in GalSim) and IPC. Uses as input the image created with "sim.py".
+
