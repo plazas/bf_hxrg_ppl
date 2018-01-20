@@ -3,19 +3,17 @@ Code to measure the BF effect in HXRG detectors using data from JPL's Precision 
 
 
 
-##Code:  bf_ppl.py 
+## Code:  bf_ppl.py 
 
-#Usage of the code: 
+## Usage of the code: 
 
 % python bf\_ppl.py <name\_of\_output\_directory>
 
 The code is run in ‘lucius’. 
 
-#Output: 
+## Output: 
 
-The following files will be created in the directory “out\_dir/<name\_of\_output\_directory>”. Currently, “out_dir” is set to “/projector/aplazas/” in lucius 
-
-ASCII format
+The following ASCII files will be created in the directory “out\_dir/<name\_of\_output\_directory>”. Currently, “out_dir” is set to “/projector/aplazas/” in lucius. Use the code "plot_fn.py" to read them and plot them. The figures for the paper come mainly from the PDF file produced after running that code ("plot_fn.py").  
 
 jay\_NORM\_spots.dat
 jay\_NORM\_flats.dat
@@ -165,8 +163,8 @@ Loop over sources:
             - Calculate difference in rate with respect to first frame, and then normalize to produce the f_N metric: “jay metric”. The vector is  s\_vec\_jay/=NORM
             
              - For the central pixel, calculate the coefficient B : 
-                           new_B = (m/fc)*(NORM/(val0*delta_t/1000)) 
-                           The parameters used are derived from the fit:  m, m_err=linear_fit_m (samples, s_vec_jay, err)
+                           new_B = (m/fc)*(NORM/(val0*delta\_t/1000)) 
+                           The parameters used are derived from the fit:  m, m_err=linear_fit_m (samples, s\_vec\_jay, err)
                             Save that “new_B” in a vector; use those numbers to produce histogram of B in paper. 
                              Note that new_B and b = 2*(c1)*(c2)/fc  are consistent with each other. 
 
