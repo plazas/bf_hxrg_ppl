@@ -186,5 +186,5 @@ After running "bf_ppl.py" for different configurations (e.g., simulations, PPL d
 Uses GalSim to produce a simulated 2k by 2k scene with a grid of point sources. The number of spots depends on the size of their individual postage stamps; this can be chaged at the beginning of the code. As input, the code reads the PPL PSF model file provided by Chaz ("chazPSF\_lamda1\_cd3\_f11\_pix1\_noboxcar.fits"). The FITS image will be saved in a direcotry called "output". You can change this in the variable "file\_name". To change the placement of the sources, modify the variable offset as neede (e.g., offset=(ud(), ud()) for random offsets or offset=(0.0, 0.0) for sources perfectly located at the center of the pixel). The simulated scene will be used by the code "hxrg\_simulator.py" to produce simulated ramps. 
 
 ## Code: hxrg_simulator.py
-Originally written by Chaz Shapiro. This version has samll modifications to add BF (from the Power Law model in GalSim) and IPC. Uses as input the image created with "sim.py".
+Originally written by Chaz Shapiro. This version has small modifications to add BF (from the Power Law model in GalSim) and IPC. Uses as input the image created with "sim.py".
 
