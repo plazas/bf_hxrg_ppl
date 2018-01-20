@@ -12,8 +12,6 @@ from scipy import optimize
 
 import sys
 
-## Input: reads five ascii files: central pixel and four neighbors
-## Each file has 4 columns: linear flux spots | % residual spots |  linear flux flats | % residual flats
 
 
 sc=True   #sigma clipping?
@@ -26,7 +24,6 @@ print "Output PDF: fn.pdf "
 #plt.minorticks_on()
 #plt.tight_layout()
 
-### We do not have matplotlib 1.1, with the 'style' package. Modify the matplotlibrc file parameters instead
 import matplotlib as mpl
 
 mpl.rc('lines', linewidth=1, color='black', linestyle='-')
@@ -71,7 +68,8 @@ inset=False
 factor=1.2 
 
 
-root="/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/"
+#root="/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/"
+root="./ASCII_FILES_TO_PLOT/"
 
 def read_3x3_into_dict (file="", flux=False):
     f=open(file)
