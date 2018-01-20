@@ -35,13 +35,13 @@ for string in ["center", "n1", "n2", "n3", "n4"]:
     cmd="rm "+out_dir+"flat_calibration_"+string+".dat"; run_shell_cmd(cmd)
 
 
-#Parts of the code (from top to bottom): 
+## Parts of the code (from top to bottom): 
 
-1. Plotting options 
+### 1. Plotting options 
 
-2. Function definitions 
+### 2. Function definitions 
 
-3. Parameters: 
+### 3. Parameters: 
 
 dir = <name\_of\_output\_directory> 
 
@@ -102,16 +102,16 @@ Note: For the list above, double check with the PPL log book in Dropbox. The fir
 Make sure that the spots and darks have the same exposure time (same number of samples per ramp). 
 
 
-4. Load Data 
+### 4. Load Data 
 
 Here the code uses “badger.getRampsFromFiles”  so make sure you can import “badger” or that you at least have the required files in your directory. 
 
-5. Stack data 
+### 5. Stack data 
 
 If the number of files is less than 40, take the median. If it is larger, split the list in 3, take the median of each part, and then the mean of the last 3 medians. This is to avoid running out of memory. 
 
 
-6. Switch te sign of ADU (ADU-> 2^16 -1 -ADU), subtract mean of reference pixels, convert ADU to electrons
+### 6. Switch te sign of ADU (ADU-> 2^16 -1 -ADU), subtract mean of reference pixels, convert ADU to electrons
 
 Note:  A couple of parameters are defined here: 
 
@@ -121,12 +121,12 @@ start\_sample\_flats, end\_sample\_flats=1, shapes_flats[0]
 The starting frame for flats and spots is “1”, meaning that we are discarding frame “0”.  For the darks, use the same as for the spots. 
 
 
- 7. Discard frame 0 and correct for IPC with kernel K 
+ ### 7. Discard frame 0 and correct for IPC with kernel K 
 
 GLOBAL\_SPOTS, GLOBAL\_FLATS, and darks are vectors that contain the frames for the median ramps. 
 
 
-8. Run SEXtractor on last frame of median ramp GLOBAL_SPOTS if not running simulations 
+### 8. Run SEXtractor on last frame of median ramp GLOBAL_SPOTS if not running simulations 
 
 Convert back to ADU theist frame, use  “daofind\_sex\_detection.config”  as configuration file for SEXtractor. 
 
@@ -138,12 +138,12 @@ out=out\_dir + '/' + prefix + '\_sextractor\_out\_last\_sample\_ramp\_100.param'
 If you are using simulations,  the code does not run SExtractor and uses a catalog of positions created by the user when making the simulations. 
 
 
-9. Centroid calculation from last frame of spots ramp, in electrons.
+### 9. Centroid calculation from last frame of spots ramp, in electrons.
 
 Subtract the bias (B_spots), and then, within the loop, calculate the unweighted centroid after subtracting the local background. . If centroid type is ‘corner’, select only those sources in a given Cartesian quadrant (Region 1 to 4). I changed this by hand and ran the code 4 times to get the data to produce Figure 7 of the paper. 
 
 
-10. Big loop over sources to correct for NL (from flat fields), and calculate f_N
+### 10. Big loop over sources to correct for NL (from flat fields), and calculate f_N
 
 to_plot: ID of sources to plot in the final PDF  
 
@@ -169,13 +169,14 @@ Loop over sources:
                              Note that new_B and b = 2*(c1)*(c2)/fc  are consistent with each other. 
 
 
-11. After big loop, save files with output data 
+### 11. After big loop, save files with output data 
 
-12. Calculate the mean of the size of the postage stamp in each frame; then calculate relative size to first frame
+### 12. Calculate the mean of the size of the postage stamp in each frame; then calculate relative size to first frame
 
 Figure 4 of paper
 
-13. Plots: these won’t be the final plots in the paper. those are produced by another code, using the output ASCII files listed above. 
+### 13. Plots: 
+These won’t be the final plots in the paper. Those are produced by another code (plot_fn.py), using the output ASCII files listed above. 
 
 
 
