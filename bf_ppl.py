@@ -1504,6 +1504,7 @@ if simulation == False:
     cmd="rm science_andres.fits"; run_shell_cmd(cmd)
     pf.writeto ("science_andres.fits", last, clobber=True)
 
+    prefix="hola"	
     cmd="%s science_andres.fits, science_andres.fits -c daofind_sex_detection.config"%(SEXTRACTOR); run_shell_cmd (cmd)
     cmd="mkdir -v %s" %out_dir; run_shell_cmd(cmd)
     out=out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
@@ -1511,7 +1512,7 @@ if simulation == False:
     cmd="mv output.cat %s" %(out); run_shell_cmd(cmd)
     cmd="rm science_andres.fits"; run_shell_cmd(cmd)
 
-    prefix="hola"
+    
     out=out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
 
     ## REad position from detected objects catalog
