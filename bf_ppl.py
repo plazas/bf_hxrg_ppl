@@ -2152,7 +2152,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
 
             s_vec=delta_sig/delta_sum
             rates_vec_jay=delta_sig/delta_time ## Rates
-	        print "JAY's METRIC: delta_sig, delta_time: ratio is rates_vec_jay ", delta_sig, delta_time, rates_vec_jay 
+	    print "JAY's METRIC: delta_sig, delta_time: ratio is rates_vec_jay ", delta_sig, delta_time, rates_vec_jay 
 
 
             ### Second 'derivative' for Jay's metric
