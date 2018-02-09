@@ -266,7 +266,8 @@ def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=
         print "dark: %g, corrected_dark: %g " %(d_temp, d) 
 
         ## Subtract dark from data
-        s-=d
+        if subtract_dark==True:
+            s-=d
         
         print "dark subtracted signal (corrected and not corrected): %g, %g" %(s, s_temp-d_temp)
         #print bias_frame[j,i]
@@ -388,38 +389,50 @@ def twoD_Gaussian((x, y), amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
 
 
 def plot_ratio_ramps (all, title='', discard=[]):
-  
-  num_plots= len(all)
-  colormap = plt.cm.gist_ncar
-  plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0, 0.9, num_plots)])
 
-
-  fig=plt.figure()
-  ax=fig.add_subplot(111)
-  first_vec=[]
-  labels=[]
-  new_ramp_list=[]
-  for i, ramp in enumerate((all)): 
+  new_all=[]
+  for i, ramp in enumerate((all)):
     if not len(discard) == 0:
         #discard=len(all)-np.array(discard)
         if i in discard: continue
+    new_all.append(ramp)
+  
+  num_plots= len(new_all)
+  colormap = plt.cm.gist_ncar
+  plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0, 0.9, num_plots)])
 
+  fig=plt.figure()
+  ax=fig.add_subplot(111)
+  #first_vec=[]
+  labels=[]
+  new_ramp_list=[]
+
+  nsamples=len(new_all[0])
+
+  mean_ramp = np.mean(new_all, axis=0)
+
+  for i, ramp in enumerate((new_all)): 
     temp_vec=[]
-    for sample in ramp: 
+    ratio_vec=[]
+    for (sample, sample_mean) in zip(ramp, mean_ramp): 
         sample= 2**16 - 1 - sample
+        sample_mean= 2**16 - 1 - sample_mean
         mean_region= np.mean (sample[200:1900, 200:1900])
-        if i == 0:
-            first_vec.append(mean_region)    
-        else:
-            temp_vec.append(mean_region)
-    if i == 0: 
-        first_vec=np.array(first_vec)
-        continue
-    else:
-        temp_vec=np.array(temp_vec)
-    #ratio = 1- temp_vec/first_vec 
-    ratio = temp_vec
+        mean_region_of_mean_ramp= np.mean (sample_mean[200:1900, 200:1900])
+        ratio_vec.append( mean_region/mean_region_of_mean_ramp -1 )
 
+        #if i == 0:
+        #    first_vec.append(mean_region)    
+        #else:
+        #    temp_vec.append(mean_region)
+    #if i == 0: 
+    #    first_vec=np.array(first_vec)
+    #    continue
+    #else:
+        #temp_vec=np.array(temp_vec)
+    #ratio = temp_vec/first_vec - 1 
+    #ratio = temp_vec
+    ratio_vec=np.array(ratio_vec)
 
     new_ramp_list.append(ramp)
 
@@ -427,10 +440,12 @@ def plot_ratio_ramps (all, title='', discard=[]):
     #    print "ESTE ES!!!!!! : "
     #    print i, ratio, title
 
-    plt.plot(ratio, '.-' )
-    ax.annotate('%g' %i, xy=(5, ratio[5]), xytext=(5, ratio[5]), size=4)
+    plt.plot(ratio_vec, '.-' )
+    ax.annotate('%g' %i, xy=(nsamples-1, ratio_vec[nsamples-1]), xytext=(nsamples-1, ratio_vec[nsamples-1]), size=4)
     labels.append("%g" %(i))
     ax.set_title(title)
+    ax.set_xlabel('frame number')
+    ax.set_ylabel('(ramp kth[region]/ <ramp>[region]) - 1')
   #plt.legend(labels, ncol=7, loc='upper center', bbox_to_anchor=[0.5, 1.1], columnspacing=1.0, labelspacing=0.0, handletextpad=0.0, handlelength=1.5, fancybox=True, shadow=True)
   pp.savefig()
   
@@ -1125,9 +1140,8 @@ S.Popen([cmd], shell=True, stdout=S.PIPE).communicate()[0].split()
 print "OUTPUT DIRECTORY: ", out_dir
 pp=PdfPages(out_dir+"bf_ppl_out.pdf")
 
+
 sigma_cut=3.0
-#prop = fm.FontProperties(size=5)
-#loc_label='upper right'
 gain=2.7 #e/ADU
 
 ysize=2048
@@ -1139,9 +1153,12 @@ stamp_string='three'
 
 correct_NL=True
 correct_IPC=True
+subtract_dark=False
 simulation=False
 root_sim="TESTJULY21_90_V9"
 examine_ramps=True
+no_norm=False  #Default should be False. if set to true, f_N metric will have F* (its NORM) set to 1. To produce Fig 6 of paper. Absolute value of flux changes. 
+
 
 
 MASK=pf.open("/projector/aplazas/master-euclid-mask.fits")[0].data
@@ -1153,11 +1170,13 @@ nl_threshold_f, nl_threshold_s= 3.0, 3.0
 
 x_cut, y_cut = 10, 10
 centroid_type = 'center'
+region=9999
 
 if centroid_type == 'center':
     MIN_CENTROID_THRESHOLD, MAX_CENTROID_THRESHOLD = 0.001, 0.0 + centroid_threshold
 elif centroid_type == 'corner':
    MIN_CENTROID_THRESHOLD, MAX_CENTROID_THRESHOLD = np.sqrt(2)*0.5 - centroid_threshold, np.sqrt(2)*0.5
+   region=int(sys.argv[2])
 else: 
     print "Enter a vaild centroid type: center or corner."
     sys.exit(1)
@@ -1165,18 +1184,39 @@ else:
 SEXTRACTOR="/usr/local/optical/sextractor/bin/sex"
 
 
+#old data, 1 micron filter (Y?)
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-000[0-9]*.fits"   # 10 ramps of darks
+#list_of_spots_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-02[7-9][0-9]*.fits" # andres-02[1-9][0-9]*.fits, 80 ramps of spots, wlamp=180 SPOTS
+#list_of_spots_ppl_2="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-030[0-9]*.fits"  # remaining 10 (initially 100 ramps, discarded first 10)
+#list_of_flats_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-00[7-9][0-9]_000*.fits"  ## Pick flats away from first ramps to avoid "burn-in", flats at 120W. Discard first 10.
+#list_of_flats_ppl_2="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-010[0-9]_000*.fits"  # remaining 10, 120W  
 
-list_of_darks_ppl="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-000[0-9]*.fits"   # 10 ramps of darks
-list_of_spots_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-02[1-9][0-9]*.fits" # andres-02[1-9][0-9]*.fits, 80 ramps of spots, wlamp=180 SPOTS
-list_of_spots_ppl_2="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-030[0-9]*.fits"  # remaining 10 (initially 100 ramps, discarded first 10)
-list_of_flats_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-00[1-9][0-9]_000*.fits"  ## Pick flats away from first ramps to avoid "burn-in", flats at 120W. Discard first 10.
-list_of_flats_ppl_2="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-010[0-9]_000*.fits"  # remaining 10, 120W  
+##simulations
 list_of_darks_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*BACKGROUND*_00[1-2]*.fits"
 list_of_spots_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*OBJECT*.fits"
 list_of_flats_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*FLAT*.fits"
 
 
-################################## 4. LOAD DATA ################################
+# New data with H filter, taken by Chaz on 2018-1-25
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-01-25/raw/BFdark000*.fits"
+#list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-01-25/raw/BFspot00[5-9]*.fits"
+#list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-01-25/raw/BFflat00[5-9]*.fits"
+
+#More new data, taken by Chaz on 2018-1-30, 2018-1-31, 2018-2-1 (see PPL log),  FILMSTRIP , reset starts at 0
+list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-01-30/DARKS/BF_Hband00*.fits" # 30, 0000-0029
+list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-01-31/SPOTS/BF_Hband00[4-9]*.fits" #100, 0000-0099
+list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-02-01/FLATS/BF_Hband_flat00[4-9]*.fits" 
+
+
+#More new data, taken by Chaz on 2018-1-30, 2018-1-31, 2018-2-1 (see PPL log),  SOLO (individual files per frame)
+
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-02-01/SOLO/DARKS/*.fits" # 30*6
+#list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-02-01/SOLO/FLATS/*00[4-9]?_*.fits" # 100*6
+#list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-02-01/SOLO/SPOTS/*00[4-9]?_*.fits" # 100*6
+
+
+
+################################# 4. LOAD DATA ################################
 
 
 
@@ -1188,16 +1228,24 @@ if simulation == False:
     files_darks=glob.glob(list_of_darks_ppl) 
     
     #Spots:
-    files1=glob.glob(list_of_spots_ppl_1)  
-    files2=glob.glob(list_of_spots_ppl_2)     
-    files_spots=sorted(files1+files2)
+    
+    #files1=glob.glob(list_of_spots_ppl_1)  
+    #files2=glob.glob(list_of_spots_ppl_2)     
+    #files_spots=sorted(files1+files2)
+ 
+    files=glob.glob(list_of_spots_ppl)
+    files_spots=sorted(files)
+
 
     #Flats
 
-    files1=glob.glob(list_of_flats_ppl_1)   
-    files2=glob.glob(list_of_flats_ppl_2)  
+    #files1=glob.glob(list_of_flats_ppl_1)   
+    #files2=glob.glob(list_of_flats_ppl_2)  
+    #files_flats=sorted(files1+files2)
 
-    files_flats=sorted(files1+files2)
+    files=glob.glob(list_of_flats_ppl)
+    files_flats=sorted(files)
+
 
 else:
     
@@ -1208,27 +1256,29 @@ else:
 
    
 
-allDarks, infoDarks = badger.getRampsFromFiles(sorted(files_darks))
+
+allDarks, infoDarks = badger.getRampsFromFiles((files_darks))
 files_darks=0
 
-allSpots, infoSpots = badger.getRampsFromFiles(sorted(files_spots))
+allSpots, infoSpots = badger.getRampsFromFiles((files_spots))
 files_spots=0
 
-allFlats, infoFlats = badger.getRampsFromFiles(sorted(files_flats))
+allFlats, infoFlats = badger.getRampsFromFiles((files_flats))
 files_flats=0
 
 
 ### In addition to discarding first 10 ramps for burn-in (when reading the list of files above), get rid of individual ramps that dod not look like the others  
 if examine_ramps == True: 
-  allDarks=plot_ratio_ramps (allDarks, title='Darks', discard=[6])
-  allFlats=plot_ratio_ramps (allFlats, title='Flats', discard=range(1,15)) #[1,2,3,4,5,6,7,8,9,10])
-  allSpots=plot_ratio_ramps (allSpots, title='Spots', discard=range(1,15)+[72]) #1,2,3,4,5,6,7,8,9,10,21,24,25]+[26,27,28,30,32,33,34,36,37,38,42,46,54])
+  allDarks=plot_ratio_ramps (allDarks, title='Darks\n%s'%list_of_darks_ppl)#,discard=[6]) # discard=range(0,11)) #, discard=[6])
+  allFlats=plot_ratio_ramps (allFlats, title='Flats\n%s'%list_of_flats_ppl)#,discard=range(0,15) + [18]) # discard=range(70,74))     #, discard=range(1,15) + [18])
+  allSpots=plot_ratio_ramps (allSpots, title='Spots\n%s'%list_of_spots_ppl)#,discard=range(0,15))# discard=range(0,11))#, discard=range(1,15)) #1,2,3,4,5,6,7,8,9,10,21,24,25]+[26,27,28,30,32,33,34,36,37,38,42,46,54])
 
+pp.close()
+sys.exit()
 
 
 print "len all Spots, allFlats, allDarks:", len(allSpots), len(allFlats), len(allDarks)
 print "infoSpots: ", infoSpots
-
 
 ################################## 5. STACK DATA ################################
 
@@ -1236,20 +1286,22 @@ print "infoSpots: ", infoSpots
 ### Try mean of medians if number of files is larger than 40. 
 
 
-if len(allSpots) < 40:
+if len(allSpots) < 30:
     temp_spots=np.median(allSpots, axis=0)
     temp_flats=np.median(allFlats, axis=0)
 else:
-    midpoint=len(allSpots)/3
+    midpoint=len(allSpots)/4
     a= np.median(allSpots[:midpoint], axis=0)
     b= np.median(allSpots[midpoint:2*midpoint], axis=0)
-    c= np.median(allSpots[2*midpoint:], axis=0)
-    temp_spots= (a+b+c)*1./3
+    c= np.median(allSpots[2*midpoint:3*midpoint], axis=0)
+    d= np.median(allSpots[3*midpoint:], axis=0)
+    temp_spots= (a+b+c+d)*1./4
 
     a= np.median(allFlats[:midpoint], axis=0)
     b= np.median(allFlats[midpoint:2*midpoint], axis=0)
-    c= np.median(allFlats[2*midpoint:], axis=0)
-    temp_flats=(a+b+c)*1./3
+    c= np.median(allFlats[2*midpoint:3*midpoint], axis=0)
+    d= np.median(allFlats[3*midpoint:], axis=0)
+    temp_flats=(a+b+c+d)*1./4
 
 
 
@@ -1279,9 +1331,9 @@ data_flats=np.zeros(shapes_flats)
 print "shapes_spots, shapes_darks, shapes_flats: ", shapes_spots, shapes_darks, shapes_flats
 
 
-if not shapes_spots [0] == shapes_darks[0]:
-    print "Mean spot ramp and mean dark ramps don't have same number of samples/frames. "
-    sys.exit()
+#if not shapes_spots [0] == shapes_darks[0]:
+#    print "Mean spot ramp and mean dark ramps don't have same number of samples/frames. "
+#    sys.exit()
 
 
 ### CHAZ" 
@@ -1406,9 +1458,9 @@ allDarks=0
 allFlats=0
 
 
-if not infoDarks['EXPTIME'][0] == infoSpots['EXPTIME'][0]: 
-    print "Exposure time for spots and darks is not the same."
-    sys.exit(1)
+#if not infoDarks['EXPTIME'][0] == infoSpots['EXPTIME'][0]: 
+#    print "Exposure time for spots and darks is not the same."
+#    sys.exit(1)
 
 
 print "infoDarks['sample'][0]: ", infoDarks['sample'][0] 
@@ -1418,15 +1470,24 @@ print "shapes_darks[0]: ", shapes_darks[0]
 print "shapes_flats[0]: ", shapes_spots[0]
 
 
-time_darks=np.linspace(0.0, infoDarks['EXPTIME'][0], shapes_darks[0])
+
+time_darks=np.linspace(0*infoDarks['FRAMTIME'][0], infoDarks['sample'][0]*infoDarks['FRAMTIME'][0], infoDarks['sample'][0]+1)
 time_darks=time_darks[start_sample_spots:end_sample_spots]
 
-time_flats=np.linspace(0.0, infoFlats['EXPTIME'][0], shapes_flats[0])
+
+time_flats=np.linspace(0*infoFlats['FRAMTIME'][0], infoFlats['sample'][0]*infoFlats['FRAMTIME'][0], infoFlats['sample'][0]+1)
 time_flats=time_flats[start_sample_flats:end_sample_flats]
 
 
+#time_spots=time_darks
+
 print "len(time_darks), len(time_flats): ", len(time_darks), len(time_flats)
 print "len(GLOBAL_SPOTS): ", len(GLOBAL_SPOTS)
+
+
+print time_darks
+print time_flats
+#sys.exit()
 
 
 if not len(time_flats) == len(GLOBAL_FLATS):
@@ -1444,8 +1505,6 @@ if not len(time_darks) == len(darks):
     print "len(time_darks) not the same as len(GLOBAL_darks)"
     print len(time_darks), len(darks)
     sys.exit()
-
-
 
 
 
@@ -1503,7 +1562,7 @@ if simulation == False:
     print "last.shape: ", last.shape
     cmd="rm science_andres.fits"; run_shell_cmd(cmd)
     pf.writeto ("science_andres.fits", last, clobber=True)
-
+    prefix="hola"
     cmd="%s science_andres.fits, science_andres.fits -c daofind_sex_detection.config"%(SEXTRACTOR); run_shell_cmd (cmd)
     cmd="mkdir -v %s" %out_dir; run_shell_cmd(cmd)
     out=out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
@@ -1511,7 +1570,6 @@ if simulation == False:
     cmd="mv output.cat %s" %(out); run_shell_cmd(cmd)
     cmd="rm science_andres.fits"; run_shell_cmd(cmd)
 
-    prefix="hola"
     out=out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
 
     ## REad position from detected objects catalog
@@ -1624,17 +1682,50 @@ for (xc, yc) in zip (x_int, y_int):
             print "HOLA", xc, yc, norm_centroid, flux
 
     if  centroid_type == 'corner':
-        if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid > 0) and (y_centroid > 0):    #Region 4
+
+        if region == 4: 
+            if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid > 0) and (y_centroid > 0):    #Region 4
         #if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid < 0) and (y_centroid > 0):    #Region 3
         #if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid > 0) and (y_centroid < 0):    #Region 2
         #if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid < 0) and (y_centroid < 0):     #Region 1
-            x_int_filtered.append(xc)
-            y_int_filtered.append(yc)
-            flux_filtered.append(flux)
-            central_filtered.append(flux_central)
-            x_centroid_filtered.append(x_centroid)
-            y_centroid_filtered.append(y_centroid)
-            print "HOLA CORNER", xc, yc, norm_centroid, flux  
+                x_int_filtered.append(xc)
+                y_int_filtered.append(yc)
+                flux_filtered.append(flux)
+                central_filtered.append(flux_central)
+                x_centroid_filtered.append(x_centroid)
+                y_centroid_filtered.append(y_centroid)
+                print "HOLA CORNER", xc, yc, norm_centroid, flux  
+
+        if region == 3: 
+            if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid < 0) and (y_centroid > 0):    #Region 3
+                x_int_filtered.append(xc)
+                y_int_filtered.append(yc)
+                flux_filtered.append(flux)
+                central_filtered.append(flux_central)
+                x_centroid_filtered.append(x_centroid)
+                y_centroid_filtered.append(y_centroid)
+                print "HOLA CORNER", xc, yc, norm_centroid, flux
+
+        if region ==2 : 
+            if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid > 0) and (y_centroid < 0):
+                x_int_filtered.append(xc)
+                y_int_filtered.append(yc)
+                flux_filtered.append(flux)
+                central_filtered.append(flux_central)
+                x_centroid_filtered.append(x_centroid)
+                y_centroid_filtered.append(y_centroid)
+                print "HOLA CORNER", xc, yc, norm_centroid, flux
+
+        if region ==1:
+            if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid < 0) and (y_centroid < 0):
+                x_int_filtered.append(xc)
+                y_int_filtered.append(yc)
+                flux_filtered.append(flux)
+                central_filtered.append(flux_central)
+                x_centroid_filtered.append(x_centroid)
+                y_centroid_filtered.append(y_centroid)
+                print "HOLA CORNER", xc, yc, norm_centroid, flux
+
 
 x_int_filtered=np.array(x_int_filtered)
 y_int_filtered=np.array(y_int_filtered)
@@ -1773,8 +1864,8 @@ residual_vec=[]
 ratio_fluxes_vec=[]
 diff_fluxes_vec=[]
 
-signal_flat_SUPER_VEC=[]
-signal_spot_SUPER_VEC=[]
+#signal_flat_SUPER_VEC=[]
+#signal_spot_SUPER_VEC=[]
 
 signal_deficit_central_pixel_spots=[]
 signal_deficit_central_pixel_flats=[]
@@ -2046,9 +2137,15 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
         print " "
         
         if correct_NL == False:
-            corr_stamp = stamp - dark_stamp
+            if subtract_dark == True:
+                corr_stamp = stamp - dark_stamp
+            else:
+                corr_stamp = stamp
         else:
-            corr_stamp = corr_stamp_spots - corr_stamp_darks
+            if subtract_dark == True: 
+                corr_stamp = corr_stamp_spots - corr_stamp_darks
+            else:
+                corr_stamp = corr_stamp_spots
 
         print "corr_stamp_spots: ", corr_stamp_spots
 	#print "corr_stamp_darks: ", corr_stamp_darks
@@ -2081,9 +2178,15 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
         print " "
 
         if correct_NL == False:
-            corr_stamp = stamp - dark_stamp
+            if subtract_dark == True:
+                corr_stamp = stamp - dark_stamp
+            else:
+                corr_stamp = stamp
         else:
-            corr_stamp = corr_stamp_flats - corr_stamp_darks
+            if subtract_dark==True:
+                corr_stamp = corr_stamp_flats - corr_stamp_darks
+            else:
+                corr_stamp = corr_stamp_flats 
 
         print "corr_stamp_flats: ", corr_stamp_flats
         #print "corr_stamp_darks: ", corr_stamp_darks
@@ -2152,7 +2255,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
 
             s_vec=delta_sig/delta_sum
             rates_vec_jay=delta_sig/delta_time ## Rates
-	        print "JAY's METRIC: delta_sig, delta_time: ratio is rates_vec_jay ", delta_sig, delta_time, rates_vec_jay 
+	    print "JAY's METRIC: delta_sig, delta_time: ratio is rates_vec_jay ", delta_sig, delta_time, rates_vec_jay 
 
 
             ### Second 'derivative' for Jay's metric
@@ -2199,8 +2302,8 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
                 
 
 
-
-            #NORM=1
+            if no_norm==True:   # for Fig. 6 of paper, red data 
+                NORM=1
             #### Actual f_N metric
             s_vec_jay/=NORM    
 
@@ -2229,6 +2332,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
                 fc=1000*(c-sum)
                 c1=dict_B[(1,1)][0][1]*1000
                 c2=dict_B[(1,1)][0][2]
+                if fc == 0: continue
                 b = 2*(c1)*(c2)/fc
 
                 samples=range(1, len(s_vec_jay) + 1)
@@ -2417,13 +2521,20 @@ diff_fluxes_vec=np.array(diff_fluxes_vec)
 
 
 signal_deficit_central_pixel_spots=np.array(signal_deficit_central_pixel_spots)
-#signal_deficit_central_pixel_flats=np.array(signal_deficit_central_pixel_flats)
+signal_deficit_central_pixel_flats=np.array(signal_deficit_central_pixel_flats)
 
 median_def_spot_signal=np.median(signal_deficit_central_pixel_spots, axis=0)
-#median_def_flat_signal=np.median(signal_deficit_central_pixel_flats, axis=0)
+median_def_flat_signal=np.median(signal_deficit_central_pixel_flats, axis=0)
 
 NORM_flats_big_vec=np.array(NORM_flats_big_vec)
 NORM_spots_big_vec=np.array(NORM_spots_big_vec)
+
+#signal_flat_SUPER_VEC=np.array(signal_flat_SUPER_VEC)
+#signal_spot_SUPER_VEC=np.array(signal_spot_SUPER_VEC)
+
+#median_flat_signal = np.median(signal_flat_SUPER_VEC, axis=0)
+#median_spot_signal = np.median(signal_spot_SUPER_VEC, axis=0)
+
 
 
 np.savetxt (out_dir+"jay_NORM_spots.dat", NORM_spots_big_vec)
@@ -2437,7 +2548,7 @@ np.savetxt (out_dir+"jay_diff_fluxes_center_pixel.dat", diff_fluxes_vec)
 #np.savetxt (out_dir+"jay_median_flux_spots_center_pixel.dat", median_spot_signal)
 
 #np.savetxt (out_dir+"jay_median_deficit_flux_flats_center_pixel.dat", median_def_flat_signal)
-np.savetxt (out_dir+"jay_median_deficit_flux_spots_center_pixel.dat", median_def_spot_signal)
+#np.savetxt (out_dir+"jay_median_deficit_flux_spots_center_pixel.dat", median_def_spot_signal)
 
 
 ##### Residual of NL model for each pixel. Print a separate file for each pixel. 
