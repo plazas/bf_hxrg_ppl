@@ -12,6 +12,8 @@ from scipy import optimize
 
 import sys
 
+## Input: reads five ascii files: central pixel and four neighbors
+## Each file has 4 columns: linear flux spots | % residual spots |  linear flux flats | % residual flats
 
 
 sc=True   #sigma clipping?
@@ -24,6 +26,7 @@ print "Output PDF: fn.pdf "
 #plt.minorticks_on()
 #plt.tight_layout()
 
+### We do not have matplotlib 1.1, with the 'style' package. Modify the matplotlibrc file parameters instead
 import matplotlib as mpl
 
 mpl.rc('lines', linewidth=1, color='black', linestyle='-')
@@ -65,13 +68,15 @@ visible_x, visible_y = True, True
 inset=False
 
 
-factor=1.2 
+factor=1.0 
 
 
-#root="/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/"
-root="./ASCII_FILES_TO_PLOT/"
+root="/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/"
 
-def read_3x3_into_dict (file="", flux=False):
+#directory_with_files="H_FILTER_CENTER_PPL/"
+
+
+def read_3x3_into_dict (file="", flux=False, nframes=4):
     f=open(file)
     if flux:
         dict={"1":[[],[],[]], "2":[[],[],[]], "3":[[],[],[]], "4":[[],[],[]], \
@@ -83,10 +88,10 @@ def read_3x3_into_dict (file="", flux=False):
     for line in f:
         s=line.split(' ')
         #print s[0]
-        for i in [1,2,3,4]:
+        for i in range(1,nframes+1):
             dict[s[0]][0].append(float(s[i]))
-            dict[s[0]][1].append(float(s[i+4]))
-            if flux: dict[s[0]][2].append(float(s[i+8]))
+            dict[s[0]][1].append(float(s[i+nframes]))
+            if flux: dict[s[0]][2].append(float(s[i+2*nframes]))
     f.close()
 
     for key in dict:
@@ -98,15 +103,15 @@ def read_3x3_into_dict (file="", flux=False):
 
 
 
-def read_surrounding_into_dict (file=""):
+def read_surrounding_into_dict (file="", nframes=4):
     f=open(file)
     dict={"1":[[],[]], "2":[[],[]]}
     for line in f:
         s=line.split(' ')
         #print s[0]
-        for i in [1,2,3,4]:
+        for i in range(1,nframes+1):
             dict[s[0]][0].append(float(s[i]))
-            dict[s[0]][1].append(float(s[i+4]))
+            dict[s[0]][1].append(float(s[i+nframes]))
     f.close()
 
     for key in dict:
@@ -114,7 +119,6 @@ def read_surrounding_into_dict (file=""):
         dict[key][1]= np.array(dict[key][1])
     
     return dict
-
 
 
 
@@ -130,9 +134,26 @@ def linear_fit (x,y,y_err):
     return pfinal[0], np.sqrt(covar[0])
 
 ### Read files
+import ConfigParser
+Config = ConfigParser.ConfigParser()
+Config.read("config_plot_fn.ini")
+
+Config.get('params', 'OutDirRoot')
 
 
-ppl_center_dict=read_3x3_into_dict (root+"CENTER_PPL/jay_metric.dat", flux=True)
+# PARAMS
+root="/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/"
+temp_dir="MAR14_Y_BAND_CUBIC/"  #"FEB26_QUAD_DARK_SUBTRACTED_ZERO_FRAME_YES/"
+nframes=4
+nframes_corner=6
+
+
+
+
+ppl_center_dict=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/" + temp_dir + "jay_metric.dat", flux=True, nframes=nframes)
+#ppl_center_dict=read_3x3_into_dict (root+"CENTER_PPL/" + "jay_metric.dat", flux=True, nframes=nframes)
+
+
 #ppl_corner_dict=read_3x3_into_dict (root+"CORNER_PPL/jay_metric_corner.dat" )
 sim_center_dict=read_3x3_into_dict (root+"CENTER_SIM_NL_CORRECTED/jay_metric_oct21.dat" )
 sim_center_nc_dict=read_3x3_into_dict (root+"CENTER_SIM_NL_NOT_CORRECTED/jay_metric_sim_nl_not_corr.dat" )
@@ -163,6 +184,7 @@ prop = fm.FontProperties(size=4.5)
 
 size_fn=7.5
 
+###### PAGE 1
 
 fig=plt.figure()
 for key in ppl_center_dict:
@@ -242,7 +264,7 @@ pp.savefig()
 factor=1.0
 ##### PLOT ONLY THE PPL DATA
 
-
+#### PAGE 2
 
 fig=plt.figure()
 for key in ppl_center_dict:
@@ -256,19 +278,35 @@ for key in ppl_center_dict:
         
         #plt.ylim([-0.023, 0.023])
         #plt.xlim([5e3,8e4])
-        plt.yticks([-0.025, -0.0125, 0.0, 0.0125, 0.025], fontsize=size_fn)
-        plt.xticks([2e4,5e4,7.6e4], fontsize=size_fn)    
 
+        #plt.yticks([-0.025, -0.0125, 0.0, 0.0125, 0.025], fontsize=size_fn)
+        #plt.xticks([2e4,5e4,7.6e4], fontsize=size_fn)    
+
+        #plt.yticks([-0.005, -0.0025, 0.0, 0.0025, 0.005], fontsize=size_fn)
+        #plt.xticks([2e4,4e4,6e4], fontsize=size_fn)         
+
+        
     #plt.ylim([-0.1,0.1])
     elif key in ['2','4','6','8']:
         print " "
         #plt.ylim([-0.006,0.006])
         #plt.xlim([500,2300])
-        plt.yticks([-0.005, -0.0025, 0.0, 0.0025, 0.005], fontsize=size_fn)
-        plt.xticks([2000,5000,8000], fontsize=size_fn)    
+
+        #plt.yticks([-0.005, -0.0025, 0.0, 0.0025, 0.005], fontsize=size_fn)
+        #plt.xticks([2000,5000,8000], fontsize=size_fn)
+
+        #plt.yticks([-0.005, -0.0025, 0.0, 0.0025, 0.005], fontsize=size_fn)
+        #plt.xticks([10000,17500,25000], fontsize=size_fn)
+        
+        
     else:
-        plt.yticks([-0.0005, -0.00025, 0.0, 0.00025, 0.0005], fontsize=size_fn)
-        plt.xticks([500,1500,2400], fontsize=size_fn) 
+        print " "
+        #plt.yticks([-0.0005, -0.00025, 0.0, 0.00025, 0.0005], fontsize=size_fn)
+        #plt.xticks([500,1500,2400], fontsize=size_fn)
+       
+        #plt.yticks([-0.0025, -0.00125, 0.0, 0.00125, 0.0025], fontsize=size_fn)
+        #plt.xticks([5000,10000,15000], fontsize=size_fn)
+        
         
     if key in ['1','4','7']:
         ax.set_ylabel(r"$f_{N}$", size =14)
@@ -319,21 +357,19 @@ pp.savefig()
 
 
 
-
-
-
-
-
 ##### Plot relative sizes
+
+########## PAGE 3
 
 
 #data_ppl_center=np.genfromtxt(root+"CENTER_PPL/jay_relative_size_oct25.dat")
-data_ppl_center=np.genfromtxt(root+"CENTER_PPL/jay_relative_size.dat")
-data_sim_nl= np.genfromtxt(root+"CENTER_SIM_NL_CORRECTED/relative_size_oct21.dat")
-data_sim_nl_nc= np.genfromtxt(root+"CENTER_SIM_NL_NOT_CORRECTED/relative_size_sim_NL_not_corr.dat")
-data_sim_nothing=np.genfromtxt(root+"SIMS_NOTHING/relative_size.dat")
-data_flats_120v100=np.genfromtxt(root+"FLATS_120_VS_FLATS_100/relative_size_oct21.dat")
-data_sim_bf=np.genfromtxt(root+"CENTER_SIM_BF_90RAMPS_V7/jay_relative_size.dat")
+data_ppl_center=np.genfromtxt(root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_relative_size.dat")
+
+#data_sim_nl= np.genfromtxt(root+"CENTER_SIM_NL_CORRECTED/relative_size_oct21.dat")
+#data_sim_nl_nc= np.genfromtxt(root+"CENTER_SIM_NL_NOT_CORRECTED/relative_size_sim_NL_not_corr.dat")
+#data_sim_nothing=np.genfromtxt(root+"SIMS_NOTHING/relative_size.dat")
+#data_flats_120v100=np.genfromtxt(root+"FLATS_120_VS_FLATS_100/relative_size_oct21.dat")
+#data_sim_bf=np.genfromtxt(root+"CENTER_SIM_BF_90RAMPS_V7/jay_relative_size.dat")
 
 
 
@@ -354,7 +390,7 @@ for i,data in enumerate(data_vec):
     print c[i], y
     size_final_mean=100*(y - y[0])/y[0]
     ax=fig.add_subplot(111)
-    plt.errorbar (x, size_final_mean, yerr=y, markersize=8, fmt=c[i]+'-o', label=label_vec[i])
+    plt.errorbar (x, size_final_mean, yerr=yerr, markersize=8, fmt=c[i]+'-o', label=label_vec[i])
     plt.legend(loc='upper left', fancybox=True, ncol=1, numpoints=1, prop = prop, handlelength=3)
     #plt.xlim([0,5])
     ax.set_xlabel("Average of mean signal in central pixel (e$^-$)", size =12)
@@ -368,12 +404,15 @@ pp.savefig()
 
 
 ###### Plot B histogram
+######  PAGE 4
 
 #from matplotlib.ticker import NullFormatter
-#F_C, B, c1, c2, m, m_err, m/F_c
+#b = 2*(c1)*(c2)/fc
+# new_B = (m/fc)*(NORM/(val0*delta_t/1000))   # delta_s in miliseconds            
+# fc,b, c1, c2, m, m_err, m/fc, new_B
 
-#data_B=np.genfromtxt (root+"CENTER_PPL/B_oct21.dat")
-data_B=np.genfromtxt (root+"CENTER_PPL/jay_B.dat")
+#data_B=np.genfromtxt (root+"CENTER_PPL/jay_B.dat")
+data_B=np.genfromtxt (root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_B.dat")
 #data_B=np.genfromtxt(root+"jay_B_FINAL_DEC4.dat")
 
 
@@ -383,10 +422,15 @@ c1=data_B[:,2]
 c2=data_B[:,3]
 m=data_B[:,4]
 me=data_B[:,5]
-b2=data_B[:,7]   #### CHANGED to new B, column 6, not 6
+b2=data_B[:,7]   #### CHANGED to new B, not 
+
+#c2_flats=np.genfromtxt (root+"H_FILTER_CENTER_PPL/jay_c2_flats.dat")
+#c2_spots=np.genfromtxt (root+"H_FILTER_CENTER_PPL/jay_c2_spots.dat")
 
 c2_flats=np.genfromtxt (root+"CENTER_PPL/jay_c2_flats.dat")
 c2_spots=np.genfromtxt (root+"CENTER_PPL/jay_c2_spots.dat")
+
+
 
 
 vec=[ (fc, 'Fc', 'green'), (b1,"B, method 1", 'blue'), (c1, "c1", 'yellow'), (c2, "c2", 'magenta'), (m, "m", 'cyan'), (b2,"B (1/e$^-$)", 'red'), (c2_flats,"$C_2$ flats", 'red'), (c2_spots,"$C_2$ spots", 'blue')  ]
@@ -497,7 +541,7 @@ for v in vec:
 
 ##### Plot B2 histogram from data and simulations together
 
-
+########### PAGE 5
 
 mpl.rc('axes.formatter', limits=[-4,4])
 mpl.rc('axes.formatter', limits=[-4,4])
@@ -534,8 +578,8 @@ ax.spines["right"].set_visible(False)
 #ax.set_title("B (1/e$^{-}$)")
 ax.set_xlabel("B (1/e$^{-}$)")
 
-pp.savefig(bbox_inches="tight")
-
+#pp.savefig(bbox_inches="tight")
+pp.savefig()
 
 
 mpl.rc('axes.formatter', limits=[-6,6])
@@ -546,7 +590,7 @@ mpl.rcParams['xtick.labelsize']= '10.0'
 
 ###### PLOT Residuals of model for each central spot in flats, for central pixel 
 
-median_flux_flats=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_flux_flats_center_pixel.dat")
+#median_flux_flats=np.genfromtxt(root+"H_FILTER_CENTER_PPL/"+"jay_median_flux_flats_center_pixel.dat")
 #median_flux_spots=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_flux_spots_center_pixel.dat")
 
 #if not len(median_flux_flats) == len(median_flux_spots):
@@ -557,17 +601,17 @@ median_flux_flats=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_flux_flats_center
 #median_flux_flats/=1e4
 
 
-data_residuals_flats=np.genfromtxt (root+"CENTER_PPL/"+"jay_residual_center_pixel_flat.dat")   #_oct25.dat")
+#data_residuals_flats=np.genfromtxt (root+"H_FILTER_CENTER_PPL/"+"jay_residual_center_pixel_flat.dat")   #_oct25.dat")
 #data_residuals=np.genfromtxt (root+"CENTER_PPL/"+"jay_residual_center_pixel_flat.dat")
 #data_residuals_spots=np.genfromtxt (root+"CENTER_PPL/"+"jay_residual_center_pixel_spots.dat") #_oct25.dat")
 
 
-frame_number=range(1, len(data_residuals_flats[0,:])+1)
-print frame_number
+#frame_number=range(1, len(data_residuals_flats[0,:])+1)
+#print frame_number
 
-mean_y = np.median(data_residuals_flats, axis=0)
+#mean_y = np.median(data_residuals_flats, axis=0)
 
-fig=fig=plt.figure()
+#fig=fig=plt.figure()
 #ax=fig.add_subplot(211)
 #for y in data_residuals_flats:
 #    ax.errorbar( median_flux_flats, y, yerr=None, ecolor = 'b', fmt='b.', markersize=6, label='', alpha=0.3)
@@ -577,30 +621,57 @@ fig=fig=plt.figure()
 #ax.grid(b=True)
 #plt.xlim([0,6])
 
-ax=fig.add_subplot(111)
-for y in data_residuals_flats:
+#ax=fig.add_subplot(111)
+#for y in data_residuals_flats:
     #print median_flux_flats, y, len(median_flux_flats), len(y)
-    ax.errorbar( median_flux_flats, y, yerr=None, ecolor = 'g', fmt='g.', markersize=7, label='', alpha=0.05)
-ax.errorbar( median_flux_flats, mean_y, yerr=None, ecolor = 'r', fmt='r.-', markersize=11, label='', alpha=1.0)
-print median_flux_flats, mean_y
-ax.set_xlabel('Average signal (e$^-$)')
-ax.set_ylabel(r"Residual (%)")
+#    ax.errorbar( median_flux_flats, y, yerr=None, ecolor = 'g', fmt='g.', markersize=7, label='', alpha=0.05)
+#ax.errorbar( median_flux_flats, mean_y, yerr=None, ecolor = 'r', fmt='r.-', markersize=11, label='', alpha=1.0)
+#print median_flux_flats, mean_y
+#ax.set_xlabel('Average signal (e$^-$)')
+#ax.set_ylabel(r"Residual (%)")
 #ax.grid(b=True)
-plt.ylim([-0.25, 0.25])
+#plt.ylim([-0.25, 0.25])
 #plt.xlim([0,6])
-ax.set_yticklabels([float(y) for y in ax.get_yticks()], visible=True, size=9)
-pp.savefig()
+#ax.set_yticklabels([float(y) for y in ax.get_yticks()], visible=True, size=9)
+#pp.savefig()
 
 
 
-################# Plot residuals for all the pixels 
+
+print "Before Page 6 "
+
+################# Plot NL relative residuals for all the pixels 
+####### PAGE 6 
+
+median_flux_flats_dict={'1': [], '2': [], '3': [], \
+                            '4':[], '5': [], '6': [], \
+                            '7':[], '8': [], '9': []}
+
+
+
+mean_y_dict={'1': [], '2': [], '3': [], \
+                            '4':[], '5': [], '6': [], \
+                            '7':[], '8': [], '9': []}
+
 
 fig=fig=plt.figure()
 for i in range(1,10):
-    median_flux_flats=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_flux_flats_pixel_%g.dat"%i)
-    data_residuals_flats=np.genfromtxt (root+"CENTER_PPL/"+"jay_residual_pixel_%g_flat.dat" %i)
+    median_flux_flats=np.genfromtxt(root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_median_flux_flats_pixel_%g.dat"%i)
+    data_residuals_flats=np.genfromtxt (root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_residual_pixel_%g_flat.dat" %i)
+
+    #median_flux_flats=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_flux_flats_pixel_%g.dat"%i)
+    #data_residuals_flats=np.genfromtxt (root+"CENTER_PPL/"+"jay_residual_pixel_%g_flat.dat" %i)
+    
+
+
+
     mean_y = np.median(data_residuals_flats, axis=0)
-    print 
+
+    ## Save vectors to use below
+    median_flux_flats_dict["%s"%i] = median_flux_flats
+    mean_y_dict["%s"%i] = mean_y
+
+    
     ax=fig.add_subplot(3,3,i)
     for y in data_residuals_flats:
         ax.errorbar( median_flux_flats, y, yerr=None, ecolor = 'g', fmt='g.', markersize=7, label='', alpha=0.1)
@@ -608,28 +679,105 @@ for i in range(1,10):
     if i in [7,8,9]: ax.set_xlabel('Average signal \n (e$^-$)', size=9.5)
     if i in [1,4,7]: ax.set_ylabel(r"Residual (%)", size=9)
     plt.ylim([-0.25, 0.25])
-    ax.set_yticklabels([float(y) for y in ax.get_yticks()], visible=True, size=7)
-    plt.yticks([-0.2, 0.0, 0.2], fontsize=size_fn)
-    plt.xticks([1.0e4 ,4.0e4, 7.0e4, 1e5], fontsize=size_fn)
+    #ax.set_yticklabels([float(y) for y in ax.get_yticks()], visible=True, size=7)
+    plt.yticks([-0.25, 0.0, 0.25], fontsize=size_fn)
+    plt.xticks([1.0e4, 4.0e4, 7.0e4, 1.0e5], fontsize=size_fn)
+plt.tight_layout()
+pp.savefig()
+
+
+
+print "Before page 6, part 2"
+
+####### PAGE 6, part 2: Absolute residuals (not relative). Note that I use (almost) the same variables as above. 
+
+median_flux_flats_dict_absolute={'1': [], '2': [], '3': [], \
+                            '4':[], '5': [], '6': [], \
+                            '7':[], '8': [], '9': []}
+
+
+mean_y_dict_absolute={'1': [], '2': [], '3': [], \
+                            '4':[], '5': [], '6': [], \
+                            '7':[], '8': [], '9': []}
+
+
+fig=fig=plt.figure()
+for i in range(1,10):
+    median_flux_flats_absolute=np.genfromtxt(root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_median_flux_flats_pixel_%g.dat"%i)
+    data_residuals_flats_absolute=np.genfromtxt (root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_residual_absolute_pixel_%g_flat.dat" %i)
+
+    #median_flux_flats=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_flux_flats_pixel_%g.dat"%i)
+    #data_residuals_flats=np.genfromtxt (root+"CENTER_PPL/"+"jay_residual_pixel_%g_flat.dat" %i)
+    
+
+
+
+    mean_y_absolute = np.median(data_residuals_flats_absolute, axis=0)
+
+    ## Save vectors to use below
+    median_flux_flats_dict_absolute["%s"%i] = median_flux_flats_absolute
+    mean_y_dict_absolute["%s"%i] = mean_y_absolute
+
+    
+    ax=fig.add_subplot(3,3,i)
+    for y in data_residuals_flats_absolute:
+        ax.errorbar( median_flux_flats_absolute, y, yerr=None, ecolor = 'b', fmt='b.', markersize=7, label='', alpha=0.1)
+    ax.errorbar( median_flux_flats_absolute, mean_y_absolute, yerr=None, ecolor = 'r', fmt='r.-', markersize=11, label='', alpha=1.0)    
+    if i in [7,8,9]: ax.set_xlabel('Average signal \n (e$^-$)', size=9.5)
+    if i in [1,4,7]: ax.set_ylabel(r"Absolute Residual", size=9)
+    plt.ylim([-20, 20])
+    #ax.set_yticklabels([float(y) for y in ax.get_yticks()], visible=True, size=7)
+    #plt.yticks([-0.25, 0.0, 0.25], fontsize=size_fn)
+    plt.xticks([1.0e4, 4.0e4, 7.0e4, 1.0e5], fontsize=size_fn)
 plt.tight_layout()
 pp.savefig()
 
 
 
 
-######## APPLES TO APPLES COMPARISON OF ERROR INDUCED BY NL ON SIGNAL
 
+
+
+
+######## APPLES TO APPLES COMPARISON OF ERROR INDUCED BY NL ON SIGNAL
+### PAGE 8 
+
+
+
+
+#delta_t=3.0 #seconds
+#simulated_mean_spot_fluxes={'1': 139.028, '2': 521.738, '3':163.384, \
+#                            '4':531.722, '5':5047.73, '6':520.802, \
+#                            '7': 147.19, '8': 520.826, '9': 151.987}
+
+## H filter 
+#delta_t=3.350
+#simulated_mean_spot_fluxes={'1': 845.621, '2': 1105.43, '3':847.195, \
+#                            '4':1207.35, '5':2772.44, '6':1192.33, \
+#                            '7': 844.803, '8': 1109.37, '9': 845.586}
+
+
+simulated_mean_spot_fluxes_data=np.genfromtxt (root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_median_spot_fluxes.dat")
+simulated_mean_spot_fluxes={'1': simulated_mean_spot_fluxes_data[0], '2': simulated_mean_spot_fluxes_data[1], '3':simulated_mean_spot_fluxes_data[2], \
+                            '4':simulated_mean_spot_fluxes_data[3], '5':simulated_mean_spot_fluxes_data[4], '6':simulated_mean_spot_fluxes_data[5], \
+                            '7': simulated_mean_spot_fluxes_data[6], '8': simulated_mean_spot_fluxes_data[7], '9': simulated_mean_spot_fluxes_data[8]}
+#delta_t=3.350528
+#delta_t=3.0
+delta_t=0.837632
+
+    
+    
 ## Dictionary of fluxes for average ramps ine ach pixel of spot:
 prop = fm.FontProperties(size=7)
 
 
-ppl_center_dict_NO_NORM=read_3x3_into_dict (root+"PPL_DATA_NO_NORM/jay_metric.dat", flux=True)
+#ppl_center_dict_NO_NORM=read_3x3_into_dict (root+"PPL_DATA_NO_NORM/jay_metric.dat", flux=True)
+ppl_center_dict_NO_NORM=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_metric_no_NORM.dat", flux=True, nframes=nframes)
 
 
-simulated_mean_spot_fluxes={'1': 139.028, '2': 521.738, '3':163.384, \
-                            '4':531.722, '5':5047.73, '6':520.802, \
-                            '7': 147.19, '8': 520.826, '9': 151.987}
-delta_t=3 #seconds
+
+
+  
 
 error_NO_NORM={'1': [], '2': [], '3': [], \
                             '4':[], '5': [], '6': [], \
@@ -640,32 +788,52 @@ res={'1': [], '2': [], '3': [], \
                             '4':[], '5': [], '6': [], \
                             '7':[], '8': [], '9': []}
 
+
+residual_functions_dict={'1': [], '2': [], '3': [], \
+                            '4':[], '5': [], '6': [], \
+                            '7':[], '8': [], '9': []}
     
 
 ### 1. Interpolate residual funcion
 
 print "      "
 from scipy.interpolate import interp1d
-print np.abs(mean_y), "hola"
+print mean_y_dict, "hola"
+
+#sys.exit(1)
 
 #mean_y=np.array([0.08,0.09,0.005,0.05,0.01])/100
 #mean_y=np.array([0.08,0.07,0.06,0.05,0.04])
 
 
-median_flux_flats[0]=0.0   # Define zero residual at zero signal 
-mean_y[0]=0.0
+#Generate the residual function objects by interpolating the mean residual curves per pixel (read data from Fig. 6)
 
-residual=interp1d(median_flux_flats, np.abs(mean_y)/100) #,bounds_error=False, fill_value=np.mean(np.abs(mean_y))/100)
-print median_flux_flats, np.mean(np.abs(mean_y))
-#stop
+for key in residual_functions_dict:
+    median_flux_flats=median_flux_flats_dict[key]
+    mean_y=mean_y_dict[key]
+    
+    median_flux_flats[0]=0.0   # Define zero residual at zero signal 
+    mean_y[0]=0.0
 
-def get_error_no_norm_ramp (ramp_number_string):
-    simulated_ramp=np.array([1,2,3,4,5])*simulated_mean_spot_fluxes[ramp_number_string]*delta_t
-    print "ramp_number_string, SIMULATED RAMP: ", ramp_number_string, simulated_ramp
-    error=simulated_ramp*residual(simulated_ramp)
+    #residual=interp1d(median_flux_flats, np.abs(mean_y)/100) #,bounds_error=False, fill_value=np.mean(np.abs(mean_y))/100)  ## Divide by 100 because mean_y is in %
+    residual=interp1d(median_flux_flats, np.abs(mean_y)/100)
+    #print median_flux_flats, np.mean(np.abs(mean_y))
+    residual_functions_dict[key]=residual
+
+    print "key, median_flux_flats, np.abs(mean_y)/100: ", key, median_flux_flats, np.abs(mean_y)/100
+
+
+
+
+    
+def get_error_no_norm_ramp (pixel_number_string, end_sample=5):
+    simulated_ramp=np.array(range(1,end_sample+1))*simulated_mean_spot_fluxes[pixel_number_string]*delta_t
+    print "key, simulated ramp: ", key, simulated_ramp
+    error=simulated_ramp*residual_functions_dict[pixel_number_string](simulated_ramp)
+    print "error: ", error
     vec=[]
     for i in range(len(error)-1):
-        print "ramp_number_string: ", ramp_number_string, i, (error[i+1]-error[i])/ delta_t
+        print "pixel_number_string: ", pixel_number_string, i, (error[i+1]-error[i])/ delta_t
         vec.append((error[i+1]-error[i])/ delta_t)
 
     vec2=[]
@@ -676,19 +844,22 @@ def get_error_no_norm_ramp (ramp_number_string):
     return np.array(vec2)
 
 
-def get_residual_func (ramp_number_string):
-    simulated_ramp=np.array([1,2,3,4,5])*simulated_mean_spot_fluxes[ramp_number_string]*delta_t
-    return residual(simulated_ramp)
-
+def get_residual_func (pixel_number_string, end_sample=5):
+    simulated_ramp=np.array(range(1,end_sample+1))*simulated_mean_spot_fluxes[pixel_number_string]*delta_t
+    return residual_functions_dict[pixel_number_string](simulated_ramp)
 
 
 fig=plt.figure()
 for key in ppl_center_dict:
     ax=fig.add_subplot(3,3,int(key))
-    plt.errorbar (ppl_center_dict[key][2] , np.abs(1000*ppl_center_dict_NO_NORM[key][0]), yerr=ppl_center_dict[key][1], fmt='k-o', markersize=5, label='PPL data')
-    error_NO_NORM[key]=get_error_no_norm_ramp(key)
+    #plt.errorbar (ppl_center_dict[key][2] , np.abs(1000*ppl_center_dict_NO_NORM[key][0]), yerr=ppl_center_dict[key][1], fmt='k-o', markersize=5, label='PPL data')
+    plt.errorbar (ppl_center_dict[key][2] , (1000*ppl_center_dict_NO_NORM[key][0]), yerr=ppl_center_dict[key][1], fmt='k-o', markersize=5, label='PPL data')
+
+
+    error_NO_NORM[key]=get_error_no_norm_ramp(key, end_sample=nframes+1)
     print "error_NO_NORM[key: ", error_NO_NORM[key]
-    plt.errorbar (ppl_center_dict[key][2] , np.abs(error_NO_NORM[key]), yerr=None, fmt='r-o', markersize=5, label='NL error')
+    #plt.errorbar (ppl_center_dict[key][2] , np.abs(error_NO_NORM[key]), yerr=None, fmt='r-o', markersize=5, label='NL error')
+    plt.errorbar (ppl_center_dict[key][2] ,   (error_NO_NORM[key]), yerr=None, fmt='r-o', markersize=5, label='NL error')
     
     #if key == '5':
         
@@ -716,14 +887,17 @@ for key in ppl_center_dict:
 
     if key == '5':
         #plt.xlim([15000, 80000])
-        plt.yticks([0.0, 50, 100, 150], fontsize=size_fn)
-        plt.xticks([1.5e4,4.5e4,7.5e4], fontsize=size_fn)
+        #plt.yticks([0.0, 50, 100, 150], fontsize=size_fn)
+        #plt.xticks([1.5e4,4.5e4,7.5e4], fontsize=size_fn)
+        print " "
     elif key in ['1','3','7','9']:
-        plt.yticks([0.0, 1.0, 2.0, 3.0,4.0], fontsize=size_fn)
-        plt.xticks([500,1500,2500], fontsize=size_fn)
+        #plt.yticks([0.0, 1.0, 2.0, 3.0,4.0], fontsize=size_fn)
+        #plt.xticks([500,1500,2500], fontsize=size_fn)
+        print " "
     else:
-        plt.xticks([2e3,5e3,8e3], fontsize=size_fn)
-        plt.yticks([0.0, 10.0, 20.0, 30.0], fontsize=size_fn)
+        print " "
+        #plt.xticks([2e3,5e3,8e3], fontsize=size_fn)
+        #plt.yticks([0.0, 10.0, 20.0, 30.0], fontsize=size_fn)
 
         
 plt.tight_layout()
@@ -733,12 +907,14 @@ pp.savefig()
 
 #### Plot only the residual function
 
+#### PAGE 8
+
 fig=plt.figure()
 for key in ppl_center_dict:
     ax=fig.add_subplot(3,3,int(key))
-    res[key]=get_residual_func(key)
+    res[key]=get_residual_func(key, end_sample=nframes+1)
     print "res[key]: ", res[key]
-    plt.plot ( np.abs(res[key]), 'b-o', markersize=5, label='Residual function')
+    plt.plot ( (res[key]), 'b-o', markersize=5, label='Residual function')
     
     if key == '5':
         
@@ -754,7 +930,7 @@ for key in ppl_center_dict:
     else:
         ax.set_ylabel("", size =14)
     if key in ['7','8','9']:
-        ax.set_xlabel("Signal (e$^-$)", size =9)
+        ax.set_xlabel("Frame number", size =9)
     else:
         ax.set_xlabel("", size =14)
     
@@ -781,132 +957,24 @@ pp.savefig()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-"""
-
-
-#### Plot F_i/<F_i>   - 1
-
-
-data_residuals_flats=np.genfromtxt (root+"CENTER_PPL/"+"jay_ratio_fluxes_center_pixel_flats_oct25.dat")
-data_residuals_spots=np.genfromtxt (root+"CENTER_PPL/"+"jay_ratio_fluxes_center_pixel_spots_oct25.dat")
-
-
-frame_number=range(1, len(data_residuals_flats[0,:])+1)
-print frame_number
-
-mean_y = np.median(data_residuals_flats, axis=0)
-mean_y2 = np.median(data_residuals_spots, axis=0)
-
-fig=fig=plt.figure()
-ax=fig.add_subplot(111)
-for y, y2 in zip(data_residuals_flats, data_residuals_spots) :
-    ax.errorbar( frame_number, y, yerr=None, ecolor = 'b', fmt='b.', markersize=3, label='', alpha=0.1)
-    ax.errorbar( frame_number, y2, yerr=None, ecolor = 'r', fmt='r.', markersize=3, label='', alpha=0.1)
-ax.errorbar( frame_number, mean_y, yerr=None, ecolor = 'b', fmt='b.-', markersize=11, label='flats', alpha=1.0)
-ax.errorbar( frame_number, mean_y2, yerr=None, ecolor = 'r', fmt='r.-', markersize=11, label='spots', alpha=1.0)
-ax.set_xlabel('Frame Number (time)')
-ax.set_ylabel('F_i/<F_i> - 1')
-plt.legend(loc='upper right', fancybox=True, ncol=1, numpoints=1, prop = prop, handlelength=3)
-ax.grid(b=True)
-plt.xlim([0,6])
-plt.ylim([-0.03, 0.03])
-
-#ax=fig.add_subplot(212)
-#for y in data_residuals:
-#    ax.errorbar( frame_number, y, yerr=None, ecolor = 'g', fmt='g.', markersize=6, label='', alpha=0.5)
-#ax.errorbar( frame_number, mean_y, yerr=None, ecolor = 'r', fmt='r.-', markersize=9, label='', alpha=1.0)
-#ax.set_xlabel('Frame Number (time)')
-#ax.set_ylabel('Residual (%): (data - model) / model')
-#ax.grid(b=True)
-#plt.ylim([-0.02, 0.02])
-#plt.xlim([0,6])
-pp.savefig()
-
-
-
-#### Plot F_i- <F_i>
-
-
-data_residuals_flats=np.genfromtxt (root+"CENTER_PPL/"+"jay_diff_fluxes_center_pixel_flats_oct25.dat")
-data_residuals_spots=np.genfromtxt (root+"CENTER_PPL/"+"jay_diff_fluxes_center_pixel_spots_oct25.dat")
-#data_residuals=np.genfromtxt (root+"CENTER_PPL/"+"jay_diff_fluxes_center_pixel.dat")
-frame_number=range(1, len(data_residuals_flats[0,:])+1)
-print frame_number
-
-mean_y = np.median(data_residuals_flats, axis=0)
-mean_y2 = np.median(data_residuals_spots, axis=0)
-
-fig=fig=plt.figure()
-ax=fig.add_subplot(111)
-for y, y2 in zip(data_residuals_flats, data_residuals_spots) :
-    ax.errorbar( frame_number, y, yerr=None, ecolor = 'b', fmt='b.', markersize=3, label='', alpha=0.1)
-    ax.errorbar( frame_number, y2, yerr=None, ecolor = 'r', fmt='r.', markersize=3, label='', alpha=0.1)
-ax.errorbar( frame_number, mean_y, yerr=None, ecolor = 'b', fmt='b.-', markersize=11, label='', alpha=1.0)
-ax.errorbar( frame_number, mean_y2, yerr=None, ecolor = 'r', fmt='r.-', markersize=11, label='', alpha=1.0)
-#ax.set_xlabel('Frame Number (time)')
-ax.set_ylabel(r"$F_i$-<$F_i$>")
-ax.grid(b=True)
-plt.xlim([0,6])
-plt.ylim([-0.15, 0.15])
-
-#ax=fig.add_subplot(212)
-#for y in data_residuals:
-#    ax.errorbar( frame_number, y, yerr=None, ecolor = 'm', fmt='m.', markersize=6, label='', alpha=0.5)
-#ax.errorbar( frame_number, mean_y, yerr=None, ecolor = 'r', fmt='r.-', markersize=9, label='', alpha=1.0)
-#ax.set_xlabel('Frame Number (time)')
-#ax.grid(b=True)
-#plt.ylim([-0.15, 0.15])
-#plt.xlim([0,6])
-
-pp.savefig()
-
-
-"""
-
-
-
 ##### Plot charge conservation
 
-#surr=read_surrounding_into_dict(root+"CENTER_PPL/"+"jay_metric_surrounding_oct21.dat")
-surr=read_surrounding_into_dict(root+"CENTER_PPL/"+"jay_metric_surrounding.dat")
-fig=plt.figure()
+### PAGE 9
 
-samples=[1,2,3,4]
+#surr=read_surrounding_into_dict(root+"CENTER_PPL/"+"jay_metric_surrounding.dat")
+surr=read_surrounding_into_dict(root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_metric_surrounding.dat", nframes=nframes)
+
+fig=plt.figure()
+samples=range(1, nframes+1)
 
 ax=fig.add_subplot (1,1,1)
 ax.errorbar( samples, surr['1'][0]/factor, yerr=surr['1'][1], ecolor = 'b', fmt='b.-', markersize=12, label='', alpha=1.0)
 ax.errorbar( samples, surr['2'][0]/factor, yerr=surr['1'][1], ecolor = 'r', fmt='r*-', markersize=12, label='', alpha=1.0)
 ax.set_xlabel("Frame difference number", size =12)
 ax.set_ylabel(r"$f_N$", size =15)
-plt.ylim([-0.023,0.023])
-plt.xticks([1, 2, 3, 4], fontsize=11)
-plt.yticks([-0.02,-0.01,0.0, 0.01, 0.02], fontsize=11)
+#plt.ylim([-0.023,0.023])
+#plt.xticks([1, 2, 3, 4], fontsize=11)
+#plt.yticks([-0.02,-0.01,0.0, 0.01, 0.02], fontsize=11)
 
 #ax.set_xticklabels(['', 1, '', 2, '', 3, '', 4, ''], visible=True, size=8)
 #ax.set_yticklabels([float(x) for x in ax.get_yticks()], visible=True, size=8)
@@ -921,10 +989,20 @@ pp.savefig()
 mpl.rc('axes.formatter', limits=[-5,5])
 ######### PLOT OF CORNERS
 
-data_corner1=read_3x3_into_dict (root+"CORNER_PPL/SECOND_RUN/REGION1_xc_lt_0_yc_lt_0/"+"jay_metric.dat", flux=True)   #5,6,8,9
-data_corner2=read_3x3_into_dict (root+"CORNER_PPL/SECOND_RUN/REGION2_xc_gt_0_yc_lt_0/"+"jay_metric.dat", flux=True)   #2,3,5,6
-data_corner3=read_3x3_into_dict (root+"CORNER_PPL/SECOND_RUN/REGION3_xc_lt_0_yc_gt_0/"+"jay_metric.dat", flux=True)   #4,5,7,8
-data_corner4=read_3x3_into_dict (root+"CORNER_PPL/SECOND_RUN/REGION4_xc_gt_0_yc_gt_0/"+"jay_metric.dat", flux=True)   #1,2,4,5
+#### PAGE 10 
+
+#data_corner1=read_3x3_into_dict (root+"CORNER_PPL/SECOND_RUN/REGION1_xc_lt_0_yc_lt_0/"+"jay_metric.dat", flux=True)   #5,6,8,9
+#data_corner2=read_3x3_into_dict (root+"CORNER_PPL/SECOND_RUN/REGION2_xc_gt_0_yc_lt_0/"+"jay_metric.dat", flux=True)   #2,3,5,6
+#data_corner3=read_3x3_into_dict (root+"CORNER_PPL/SECOND_RUN/REGION3_xc_lt_0_yc_gt_0/"+"jay_metric.dat", flux=True)   #4,5,7,8
+#data_corner4=read_3x3_into_dict (root+"CORNER_PPL/SECOND_RUN/REGION4_xc_gt_0_yc_gt_0/"+"jay_metric.dat", flux=True)   #1,2,4,5
+
+
+data_corner1=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/FEB15_FILMSTRIP_V2_DARK_SUB_YES_ZERO_FRAME_YES_REGION1/"+"jay_metric.dat", flux=True, nframes=nframes_corner)
+data_corner2=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/FEB15_FILMSTRIP_V2_DARK_SUB_YES_ZERO_FRAME_YES_REGION2/"+"jay_metric.dat", flux=True, nframes=nframes_corner)
+data_corner3=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/FEB15_FILMSTRIP_V2_DARK_SUB_YES_ZERO_FRAME_YES_REGION3/"+"jay_metric.dat", flux=True, nframes=nframes_corner)
+data_corner4=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/FEB15_FILMSTRIP_V2_DARK_SUB_YES_ZERO_FRAME_YES_REGION4/"+"jay_metric.dat", flux=True, nframes=nframes_corner)
+
+
 
 mean_corner={"1":[[],[],[]], "2":[[],[],[]], "3":[[],[],[]] , "4":[[],[],[]]}
 
@@ -953,7 +1031,7 @@ fig=plt.figure()
 for key in mean_corner:
     ax=fig.add_subplot (2,2,int(key))
     ax.errorbar( mean_corner[key][2], mean_corner[key][0]/factor, yerr=mean_corner[key][1], ecolor = 'k', fmt='k.-', markersize=6, label='', alpha=1.0)
-    plt.ylim([-0.006,0.006])
+    #plt.ylim([-0.006,0.006])
     #if key in ['1', '2']:
     #    ax.set_xticklabels([int(x) for x in ax.get_xticks()], visible=False)
     #if key in ['2', '4']:
@@ -965,49 +1043,25 @@ for key in mean_corner:
     if key in ['1', '3']:
         ax.set_ylabel(r"$f_N$", size =13)
 
-    plt.xlim([5000,27000])
+    #plt.xlim([5000,35000])
     #ax.set_xticklabels([int(x) for x in ax.get_xticks()], visible=True, size=7.5)
     #ax.set_yticklabels([float(y) for y in ax.get_yticks()], visible=True, size=7.5)
-    plt.yticks([-0.005, -0.0025, 0.0, 0.0025, 0.005], fontsize=9.5)
-    plt.xticks([5e3, 10e3, 15e3, 20e3, 25e3], fontsize=9.5)
+    #plt.yticks([-0.005, -0.0025, 0.0, 0.0025, 0.005], fontsize=9.5)
+    #plt.xticks([5e3, 10e3, 15e3, 20e3, 25e3, 30e3], fontsize=9.5)
     
 plt.tight_layout()
+plt.suptitle ("")
 pp.savefig()
-
-
-
-### PLOT OF DEFICIT IN FLUX
-
-"""
-flux_flats=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_flux_flats_center_pixel.dat")  # It says flux, but it is just signal in electrons
-flux_spots=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_flux_spots_center_pixel.dat")
-deficit_spots=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_deficit_flux_spots_center_pixel.dat")
-deficit_flats=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_deficit_flux_flats_center_pixel.dat")
-
-midpoint_flats, midpoint_spots=[],[]
-
-for i in range(len(flux_flats)-1):
-    midpoint_flats.append( (flux_flats[i] + flux_flats[i+1])*0.5  )
-for i in range(len(flux_spots)-1):
-    midpoint_spots.append( (flux_spots[i] + flux_spots[i+1])*0.5  )
-
-
-fig=plt.figure()
-ax=fig.add_subplot(111)
-ax.errorbar( midpoint_spots, np.abs(deficit_spots), yerr=None, ecolor = 'b', fmt='b.-', markersize=8, label='', alpha=1.0)
-ax.errorbar( midpoint_flats, np.abs(deficit_flats), yerr=None, ecolor = 'r', fmt='r.-', markersize=8, label='', alpha=1.0)
-ax.set_xlabel('Mean Signal / $10^4$ (e$^-$)')
-ax.set_ylabel(r"Mean deficit in central pixel (%)")
-pp.savefig()
-"""
-
 
 
 
 ##### Plot "A" NORM for both flats and spots
+### PAGE 11 
 
-data_NORM_flats=np.genfromtxt(root+"CENTER_PPL/"+"jay_NORM_flats.dat")
-data_NORM_spots=np.genfromtxt(root+"CENTER_PPL/"+"jay_NORM_spots.dat")
+"""
+
+data_NORM_flats=np.genfromtxt(root+"H_FILTER_CENTER_PPL/"+"jay_NORM_flats.dat")
+data_NORM_spots=np.genfromtxt(root+"H_FILTER_CENTER_PPL/"+"jay_NORM_spots.dat")
 
 #m_flats,  indices = eu.stat.sigma_clip(b2_sim,niter=10, nsig=sigma_cut, get_indices=True, verbose=True)
 #b2_sim=b2_sim[indices]
@@ -1028,10 +1082,10 @@ n, bins, patches_out = ax.hist(data_NORM_spots, 50, normed=False, facecolor='gre
 
 ax.tick_params(axis='both', which='major', labelsize=9)
 
-ax.set_title("A (norm)")
+plt.suptitle("F* (norm of metric)")
 
 pp.savefig()
-
+"""
 
 
 
