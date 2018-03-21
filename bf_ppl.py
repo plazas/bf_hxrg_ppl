@@ -18,7 +18,6 @@ from scipy import stats
 import matplotlib.patches as patches
 import matplotlib.cm as cm
 
-
 import badger
 import glob
 
@@ -27,6 +26,9 @@ import moments
 
 import gc
 
+import ConfigParser
+
+#from hope import jit 
 
 
 ################################## 1. PLOTTING PARAMETERS ##################################
@@ -63,12 +65,13 @@ loc_label='upper right'
 
 ################################## 2. FUNCTION DEFINITIONS ################################
 
-
+#@jit
 def fitfunc_m (x, m):
-    x=np.array(x)
+    #x=np.array(x)
     return m*x
 #pinit=[0.1]
 
+#@jit
 def linear_fit_m (x,y,y_err):
     pinit=[-0.001]
     pfinal, covar=optimize.curve_fit(fitfunc_m,x, y, p0=pinit, sigma=y_err,  maxfev=100000)
@@ -78,12 +81,26 @@ def linear_fit_m (x,y,y_err):
 
 ### QUADRATIC POLYNOMIAL
 fit_order=2
-def fitfunc (x, p0, p1, p2):
-    x=np.array(x)
+#@jit
+def fitfunc_quad (x, p0, p1, p2):
+    #x=np.array(x)
     return p0 + p1*x + p2*(p1*x)**2
 #pinit=np.repeat([1.0], fit_order + 1)
-pinit=[10000, 1000, -7.76e-7]
-pinit2=[10000,1000,-7e-10]
+
+pinit_quad=[10000, 1000, -7.76e-7]
+pinit2_quad=[10000,1000,-7e-10]
+
+
+#### Cubic polynomial
+#@jit 
+def fitfunc_cubic (x, p0, p1, p2, p3):
+    #x=np.array(x)
+    return p0 + p1*x + p2*(p1*x)**2 + p3*(p1*x)**3
+
+pinit_cubic=[10000, 1000, -7.76e-7, -1e-12]
+pinit2_cubic=[10000,1000,-7e-10, 1e-11]
+
+
 
 
 #0 0 1 1
@@ -99,7 +116,7 @@ pinit2=[10000,1000,-7e-10]
 dict_3x3={(0,0):(-1,1), (0,1):(0,1), (0,2): (1,1), \
           (1,0):(-1,0), (1,1):(0,0), (1,2): (1,0), \
           (2,0):(-1,-1),(2,1):(0,-1), (2,2): (1,-1) }
-
+#@jit
 def get_centroid_3x3 (stamp):
     s1,s2=stamp.shape
     if not s1 == 3 and s2 == 3: 
@@ -158,7 +175,8 @@ def get_centroid_5x5 (stamp):
 
 
 
-def fit_pixel_ramp (ramp='', time='', i=0, j=0, pinit=pinit):
+#@jit
+def fit_pixel_ramp (ramp='', time='', i=0, j=0, order=2):
      if not len (ramp) == len (time):
          print "inside function ;fit_pixel_ramp': len(ramp) not equal to len (time)."
          print "len (ramp) == len (time): ", len (ramp), len (time)
@@ -166,10 +184,15 @@ def fit_pixel_ramp (ramp='', time='', i=0, j=0, pinit=pinit):
          sys.exit()
          print "time: ", time
          sys.exit()   
-
  
      flag=False
-    
+     if order == 2: 
+         pinit=pinit_quad
+     elif order == 3:
+         pinit=pinit_cubic
+     else:
+         print "Wrong order within fit_pixel_ramp function "
+         sys.exit()
 
      time_vec, signal_vec, signal_vec_err=[],[],[]
      #a=[]
@@ -204,28 +227,29 @@ def fit_pixel_ramp (ramp='', time='', i=0, j=0, pinit=pinit):
      if np.isnan(signal_vec).any() or np.isinf(signal_vec_err).any():
         flag=True
         print "FLAG TRUE 1"
-        return [0.,0.,0.], np.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]), 0., flag, signal_vec
+        return np.zeros(order+1), np.zeros((order+1,order+1)), 0., flag, signal_vec
      else:
-        pfinal, covar, chi2_red = get_final_parameters_first_fit (x=time_vec, y=signal_vec, y_err=signal_vec_err, pinit=pinit)
+        pfinal, covar, chi2_red = get_final_parameters_first_fit (x=time_vec, y=signal_vec, y_err=signal_vec_err, order=order)
         if np.isinf(pfinal).any(): #or np.isinf(covar).any():
             flag=True
             print "FLAG TRUE 2"
             print "pfinal, covar: ", pfinal, covar
             print "time_vec, y=signal_vec, y_err=signal_vec_err", time_vec, signal_vec, signal_vec_err
             sys.exit()
-            return [0.,0.,0.],  np.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]), 0., flag, signal_vec
+            return np.zeros(order+1), np.zeros((order+1,order+1)) , 0., flag, signal_vec
         else:
            
-            p0, p1, p2 = pfinal[0], pfinal[1], pfinal[2]
-            p0_err=np.sqrt(np.diag(covar))[0]
-            p1_err=np.sqrt(np.diag(covar))[1]
-            p2_err=np.sqrt(np.diag(covar))[2]
+            #p0, p1, p2 = pfinal[0], pfinal[1], pfinal[2]
+            #p0_err=np.sqrt(np.diag(covar))[0]
+            #p1_err=np.sqrt(np.diag(covar))[1]
+            #p2_err=np.sqrt(np.diag(covar))[2]
             print "Todo bien in fit pixel ramp: pfinal, covar, chi2_red, flag: ", pfinal, covar, chi2_red, flag
             return pfinal, covar, chi2_red, flag, signal_vec
 
-
-def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=pinit, c0_spot=0, c0_dark=0, c1_spot=0, c1_dark=0, c2=1,):
+#@jit
+def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=pinit_quad, c0_spot=0, c0_dark=0, c1_spot=0, c1_dark=0, c2=1):
     #c2=-7.76e-7 
+    c3=-1e-12
     if not len (ramp) == len (time):
          print "inside function 'correct_and_fit_pixel_ramp': len(ramp) not equal to len (time)."
          print "len (ramp), len (time): ", len (ramp), len (time)
@@ -247,6 +271,10 @@ def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=
         
         #s=c0_spot + c1_spot*t
         s=(1/(2*c2))*(-1+np.sqrt(1-4*c2*(c0_spot-s_temp)))         ### Apply the correction here!
+        print "DISCRIMINANTE: "
+        print 18*c3*c2*(c0_spot-s_temp) - 4*c3**3*(c0_spot-s_temp)+c2**2-4*c3-27*c3**2*(c0_spot-s_temp)**2
+        #sys.exit()
+
         #print "signal: %g, corrected signal: %g" %(s_temp, s)
         #print "s/s2: ", s/s2, s, s2
         #sys.exit(1)
@@ -261,16 +289,20 @@ def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=
             d=d_temp
             
         print " "
-        print "c0_spot, c0_dark, c2 (from flat) ", c0_spot, c0_dark, c2
+        print "c0_spot, c0_dark, c1_spot, c1_dark, c2 (from flat) ", c0_spot, c0_dark, c1_spot, c1_dark, c2
         print "signal: %g, corrected_signal: %g " %(s_temp, s)
         print "dark: %g, corrected_dark: %g " %(d_temp, d) 
 
         ## Subtract dark from data
-        s-=d
+        if subtract_dark==True:
+            s-=d
         
         print "dark subtracted signal (corrected and not corrected): %g, %g" %(s, s_temp-d_temp)
         #print bias_frame[j,i]
         #sys.exit(1)
+
+        #if i == 1 and j == 1: sys.exit()
+
         time_vec.append(t)
         #signal_vec.append( 2**16-1-s )
         signal_vec.append(s) # s=ADU_dark - ADU_data
@@ -311,7 +343,7 @@ def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=
         #sys.exit()
         return [0.,0.,0.], np.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]) , 0., flag, r, b, delta_sum_stamp, signal_vec
     else:
-        pfinal, covar, chi2_red = get_final_parameters_first_fit (x=time_vec, y=signal_vec, y_err=signal_vec_err, pinit=pinit)
+        pfinal, covar, chi2_red = get_final_parameters_first_fit (x=time_vec, y=signal_vec, y_err=signal_vec_err, order=2)
         if np.isinf(pfinal).any() or np.isinf(covar).any():
             c = np.polyfit (time_vec, signal_vec, 2)
             pfinal=c
@@ -331,9 +363,19 @@ def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=
             return pfinal, covar, chi2_red, flag, r , b, delta_sum_stamp, signal_vec
 
 
-def get_final_parameters_first_fit (x=[], y=[], y_err=[], pinit=pinit):
+
+
+def get_final_parameters_first_fit (x=[], y=[], y_err=[], order=2):
+    if order ==2:
+        pinit=pinit_quad
+    elif order ==3:
+        pinit=pinit_cubic
+    else:
+        print "wrong order in get_final_parameters_first_fit "
+        sys.exit() 
+
     ###  this function gets all the parameters according to the polynomial order: alpha, beta, gamma, delta, etc
-    x,y,y_err = np.array(x), np.array(y), np.array(y_err)
+    #x,y,y_err = np.array(x), np.array(y), np.array(y_err)
     
     print "Inside get_final_parameters_first_fit (x, y, y_err): ", x,y,y_err
     for i in range(len(y)):
@@ -341,7 +383,17 @@ def get_final_parameters_first_fit (x=[], y=[], y_err=[], pinit=pinit):
             y[i] = 0
             y_err[i] = 1
 
-    pfinal, covar=optimize.curve_fit(fitfunc,x, y, p0=[1,1,1], sigma=y_err,  maxfev=1000000000)
+    if order == 2:
+        fitfunc=fitfunc_quad
+        p0=np.ones(order+1)
+    elif order == 3:
+        fitfunc=fitfunc_cubic
+        p0=np.ones(order+1)
+    else:
+        print 
+
+
+    pfinal, covar=optimize.curve_fit(fitfunc,x, y, p0=p0, sigma=y_err,  maxfev=1000000000)
     chi2= np.power( ( fitfunc ( x, *pfinal) - y)/y_err,  2).sum()
     n,d=len(x), len(pinit)
     nu=n-d
@@ -355,9 +407,18 @@ def get_final_parameters_first_fit (x=[], y=[], y_err=[], pinit=pinit):
     #covar=np.array([[1,1,1],[1,1,1],[1,1,1]])
     return pfinal, covar, chi2_red
 
+#@jit
+def aux_quadratic_fit (t_vec, s_vec, s_e_vec, label="_", order=2):
+    #if order == 2:
+    #    pinit = pinit_quad
+    #elif order == 3:
+    #    pinit=pinit_cubic
+    #else:
+    #    print "Wrong order in aux_quadratic_fit"
+    #    sys.exit()
 
-def aux_quadratic_fit (t_vec, s_vec, s_e_vec,pinit=pinit, label="_"):
-    p, c, chi2 = get_final_parameters_first_fit (x=t_vec, y=s_vec, y_err=s_e_vec, pinit=pinit)
+
+    p, c, chi2 = get_final_parameters_first_fit (x=t_vec, y=s_vec, y_err=s_e_vec, order=order)
     pe=np.sqrt(np.diag(c))
     print "p, pe, chi2: ", p, pe, chi2
     p_all=np.array([p,pe])
@@ -387,58 +448,95 @@ def twoD_Gaussian((x, y), amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
     return g.ravel()
 
 
-def plot_ratio_ramps (all, title='', discard=[]):
-  
-  num_plots= len(all)
-  colormap = plt.cm.gist_ncar
-  plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0, 0.9, num_plots)])
+def plot_ratio_ramps (all, title='', discard=[], threshold=5e-4):
 
-
-  fig=plt.figure()
-  ax=fig.add_subplot(111)
-  first_vec=[]
-  labels=[]
-  new_ramp_list=[]
-  for i, ramp in enumerate((all)): 
+  new_all=[]
+  for i, ramp in enumerate((all)):
     if not len(discard) == 0:
         #discard=len(all)-np.array(discard)
         if i in discard: continue
+    new_all.append(ramp)
+ 
+   
 
+  new_all=np.array(new_all) 
+  num_plots= len(new_all)
+  colormap = plt.cm.gist_ncar
+  plt.gca().set_color_cycle([colormap(i) for i in np.linspace(0, 0.9, num_plots)])
+
+  fig=plt.figure()
+  ax=fig.add_subplot(211)
+  #first_vec=[]
+  labels=[]
+  new_ramp_list=[]
+
+  nsamples=len(new_all[0])
+
+  #new_all_copy=(2**16-1-new_all)*gain
+  ramp_mean = np.mean(new_all, axis=0)
+
+  print len(ramp_mean)
+  print len(new_all)
+
+  last_frame_diff_vec=[]
+  for i, ramp in enumerate((new_all)): 
     temp_vec=[]
-    for sample in ramp: 
-        sample= 2**16 - 1 - sample
-        mean_region= np.mean (sample[200:1900, 200:1900])
-        if i == 0:
-            first_vec.append(mean_region)    
-        else:
-            temp_vec.append(mean_region)
-    if i == 0: 
-        first_vec=np.array(first_vec)
-        continue
-    else:
-        temp_vec=np.array(temp_vec)
-    #ratio = 1- temp_vec/first_vec 
-    ratio = temp_vec
+    ratio_vec=[]
 
+
+    #for (sample, sample_mean) in zip(ramp, mean_ramp): 
+    for j in range(len(ramp)-1):
+        sample2 = (2**16 -1 - ramp[j+1])*gain  
+        sample1 = (2**16 -1 - ramp[j])*gain        
+        diff=sample2-sample1
+ 
+
+        sample2_mean = (2**16 -1 - ramp_mean[j+1])*gain 
+        sample1_mean = (2**16 -1 - ramp_mean[j])*gain 
+
+        diff_mean = sample2_mean - sample1_mean 
+
+        mean_region = np.mean (diff[200:1900, 200:1900])
+        mean_region_of_mean_ramp= np.mean (diff_mean[200:1900, 200:1900])
+
+
+        #sample= 2**16 - 1 - sample
+        #sample_mean= 2**16 - 1 - sample_mean
+        #mean_region= np.mean (sample[200:1900, 200:1900])
+        #mean_region_of_mean_ramp= np.mean (sample_mean[200:1900, 200:1900])
+        
+        ratio_vec.append( mean_region/mean_region_of_mean_ramp -1 )
+
+    ratio_vec=np.array(ratio_vec)
+    last_frame_diff_vec.append( ratio_vec[-1])
+
+    #if np.abs(ratio_vec[-1]) > threshold: continue  # discard ramp 
 
     new_ramp_list.append(ramp)
 
-    #if ratio[-2] < ratio[1]:
-    #    print "ESTE ES!!!!!! : "
-    #    print i, ratio, title
-
-    plt.plot(ratio, '.-' )
-    ax.annotate('%g' %i, xy=(5, ratio[5]), xytext=(5, ratio[5]), size=4)
+    
+    plt.plot(ratio_vec, '.-' )
+    ax.annotate('%g' %i, xy=(nsamples-1-1, ratio_vec[nsamples-1-1]), xytext=(nsamples-1-1, ratio_vec[nsamples-1-1]), size=4)
     labels.append("%g" %(i))
     ax.set_title(title)
-  #plt.legend(labels, ncol=7, loc='upper center', bbox_to_anchor=[0.5, 1.1], columnspacing=1.0, labelspacing=0.0, handletextpad=0.0, handlelength=1.5, fancybox=True, shadow=True)
+    ax.set_xlabel('frame number')
+    ax.set_ylabel('(ramp kth[region]/ <ramp>[region]) - 1')
+  
+  print last_frame_diff_vec
+  print len(last_frame_diff_vec)
+
+  ax=fig.add_subplot(212)
+  plt.plot(last_frame_diff_vec, '.-' )
+  ax.set_xlabel('ramp number')
+  ax.set_ylabel('last frame (e)')
+
   pp.savefig()
   
 
   return new_ramp_list
 
 
-
+#@jit
 def plot_near_nl_corr (fig, frame, p_spot_corr, signal_corrected_spots, p_flat_corr, signal_corrected_flats, pos_x, pos_y):
     linear_s = p_spot_corr[1]*time_darks
     #linear_s=[12889.7802830, 25779.5605659, 38669.3408489, 51559.1211319, 64448.9014149]
@@ -541,156 +639,9 @@ def plot_pixel_ramp(ramp='', time='', fig='',i=0, j=0, counter='', fmt='k-o', pl
 
 
 
-def get_ramps (x_int, y_int, flux, ramps_dict):
-
-    for xc,yc,f in zip(x_int,y_int,flux):    
-        #xc,yc=int(xc)-1, int(yc)-1
-        #if xc + 2 > 2047: continue
-        #if yc + 2 > 2047: continue
-        stamp=GLOBAL_SPOTS[-1][yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
-        print "Inside get_ramps: FLUX_AUTO vs stamp.sum(): ", f, stamp.sum()
-        f=stamp.sum()
-
-        print "stamp shape:: ", stamp.shape
-
-        c0_mat_spots=0*stamp
-
-        c2_mat_flats=0*stamp
-        c2_mat_spots=0*stamp
-        c2_mat_spots_corr=0*stamp
-
-        c2_mat_flats_err=0*stamp
-        c2_mat_spots_err=0*stamp
-        c2_mat_spots_corr_err=0*stamp
-
-        c1_mat_spots=0*stamp
-
-
-
-        counter=1
-        #siga=False
-        #TEMP_FLAG=False
-        for i,k in zip(stamp_range_global_x, stamp_range_local):
-            siga=False
-            for j,l in zip(stamp_range_global_y, stamp_range_local):
-               
-                stamp_spots=GLOBAL_SPOTS[:, yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
-                stamp_flats=GLOBAL_FLATS[:, yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
-                stamp_darks=darks[:, yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
-                
-                plot_pixel_ramp(ramp=stamp_flats, time=time_flats, i=k,j=l, fig=fig2, counter=counter, plot_flag=False)
-                plot_pixel_ramp(ramp=stamp_spots, time=time_darks, fig=fig3, i=k,j=l, counter=counter, fmt='b-o', plot_flag=False)
-
-                p_flat, cov_flat, chi2_flat, flag1 =fit_pixel_ramp (ramp=stamp_flats,time=time_flats, i=k, j=l, pinit=pinit)
-                #if flag1 == True: continue
-                p_spot, cov_spot, chi2_spot, flag2 =fit_pixel_ramp (ramp=stamp_spots,time=time_darks, i=k, j=l, pinit=pinit)
-                #if flag2 == True: continue
-                p_dark, cov_dark, chi2_dark, flag3 =fit_pixel_ramp (ramp=stamp_darks, time=time_darks, i=k, j=l, pinit=pinit)
-                #if flag3 == True: continue
-
-
-                p_spot_corr, cov_spot_corr, chi2_spot_corr, flag4, flux_rate_spots, delta_signal_spots, delta_sum_spots, signal_corrected_spots = correct_and_fit_pixel_ramp (ramp=stamp_spots, dark_ramp=stamp_darks, time=time_darks, i=k, j=l, pinit=pinit, c0_spot=p_spot[0], c0_dark=p_dark[0], c1_spot=p_spot[1], c1_dark=p_dark[1], c2=p_flat[2])
-                #if flag4 == True: continue
-
-
-                if p_spot[0] == 0: 
-                   print k,l
-                   print p_spot
-                   sys.exit(1)
-
-                
-                c2_mat_spots[l,k], c2_mat_spots_err[l,k]=p_spot[2], np.diag(cov_spot)[2]
-                c2_mat_spots_corr[l,k], c2_mat_spots_corr_err[l,k] =p_spot_corr[2], np.diag(cov_spot_corr)[2]
-                c0_mat_spots[l,k]=p_spot[0]
-                c1_mat_spots[l,k]=p_spot[1]
-
-
-
-                ##### Spots
-                #flux_rate_spots-=p_spot_corr[0]
-                #flux_rate_spots=flux_rate_spots[1:]/time[1:]
-                diff_last_first = GLOBAL_SPOTS[-1][yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end] - GLOBAL_SPOTS[0][yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
-                delta_t=time_darks[-1] - time_darks[-2]
-                NORM = np.sum(diff_last_first)/ ( ( len(GLOBAL_SPOTS) -1) *delta_t)                
-
-                #NORM=1
- 
-                """ 
-                s_vec=[]
-                val0=flux_rate_spots[0]
-                for val in flux_rate_spots:
-                    #val=(val-val0)/ (f/ (time[-1]-time[-2]))
-                    val=(val-val0)/NORM
-                    print "VAL: ", val
-                    s_vec.append(val)
-                ramps_dict[(l,k)].append(s_vec)
-                counter+=1
-                print "pixel counter, i (along x), j (along y): ", counter, i, j 
-                """
-
-                #s_vec=[]
-                #for p,s in zip(delta_signal_spots, delta_sums_spots):
-                #    s_vec.append(p/s)
-                #    print "RATIO P/S: ", p/s
-                #s_vec=np.array(s_vec)
-                #ramps_dict[(l,k)].append(s_vec)
-                #counter+=1
-                #if np.isnan(s_vec).any() == True:
-                #    siga=True
-                #    break
-                #### TEMP
-                #if (i==xc) and (j==yc) and (s_vec[0]) < 0.3:
-                #    TEMP_FLAG=True
-                #    break
-
-
-
-        # Produce a NL-corrected stamp
-        GLOBAL_SPOTS_STAMPS_CORR, corr_stamps_sum=[],[]
-        for t, stamp, dark_stamp in zip(time_darks, GLOBAL_SPOTS[:,yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end], darks [:,yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]):
-            corr_stamp_spots = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_spots-stamp)) )
-            corr_stamp_darks = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_darks-dark_stamp)) )
-            #corr_stamp = corr_stamp_spots - corr_stamp_darks
-            #corr_stamp = c0_mat_spots + c1_mat_spots*t  - dark_stamp
-            corr_stamp = stamp - dark_stamp
-            GLOBAL_SPOTS_STAMPS_CORR.append (corr_stamp)
-            corr_stamps_sum.append(np.sum(corr_stamp))
-
-
-        siga=False
-        for i,k in zip(stamp_range_global_x, stamp_range_local):
-
-            for j,l in zip(stamp_range_global_y, stamp_range_local):
-                sig=[]
-                for sample_s in GLOBAL_SPOTS_STAMPS_CORR:
-                    sig.append(sample_s[l,k])
-
-                delta_sig, delta_sum =[],[]
-                for counter in range(len(sig)-1):
-                    delta_sig.append(sig[counter+1]-sig[counter])
-                    delta_sum.append(corr_stamps_sum[counter+1]-corr_stamps_sum[counter])
-
-                delta_sig=np.array(delta_sig)
-                delta_sum=np.array(delta_sum)
-
-                s_vec=delta_sig/delta_sum
-
-                if np.isnan(s_vec).any() == True:
-                    print "Breaking bad"
-                    #siga=True
-                    #break
-                print "delta_sig, delta_sum, s_vec: ", delta_sig, delta_sum, s_vec
-                ramps_dict[(l,k)].append(s_vec)
-
-
-            if siga ==True: break
-        if siga==True: continue        
- 
-
-
-
 
 ## Helper function to stack ramps in each pixel ad plot them. To be used in the nested loop immediatly below.
+#@jit
 def stack_ramps_and_plot (ax, ramps_dict_mean_signal, ramps_dict, fmt_string, counter_pixel, label=" ", title=" "):
     #print "HOLA "
     (j,i)=get_pair_index[counter_pixel]
@@ -774,7 +725,6 @@ def stack_ramps_and_plot (ax, ramps_dict_mean_signal, ramps_dict, fmt_string, co
     plt.errorbar (stacked_signal ,stacked, yerr=stacked_err/np.sqrt(stacked_numbers), fmt=fmt_string, markersize=4, label=label)
     #plt.errorbar (samples,stacked, yerr=stacked_err/np.sqrt(len(ramps_vector[:,1])), fmt=fmt_string, markersize=4, label=label)
     #return (stacked, stacked_err/np.sqrt(stacked_numbers))
-
    
     if STAMP_SIZE == 5 and counter_pixel==13:  #5
         plt.legend(loc='upper right', fancybox=True, ncol=1, numpoints=1, prop = prop)
@@ -823,6 +773,7 @@ def stack_ramps_and_plot (ax, ramps_dict_mean_signal, ramps_dict, fmt_string, co
 
 
 
+#@jit
 def stack_ramps_and_plot2 (ax, ramps_dict, fmt_string, counter_pixel, label=" ", title=" "):
     #print "HOLA "
     (j,i)=get_pair_index[counter_pixel]
@@ -1117,70 +1068,185 @@ def plot_all_pixels (fig, ramps_dict, fmt, label):
 
 ################################## 3. PARAMETERS ################################
 
+Config = ConfigParser.ConfigParser()
+Config.read("config_bf_ppl.ini")
 
-dir=sys.argv[1]
-out_dir='/projector/aplazas/'+dir+"/"
+
+out_dir_root= Config.get('params', 'OutDirRoot')
+dir= Config.get('params', 'OutDirName')
+out_dir=out_dir_root+dir+"/"
 cmd="mkdir -v %s"%(out_dir)
 S.Popen([cmd], shell=True, stdout=S.PIPE).communicate()[0].split()
 print "OUTPUT DIRECTORY: ", out_dir
-pp=PdfPages(out_dir+"bf_ppl_out.pdf")
 
-sigma_cut=3.0
-#prop = fm.FontProperties(size=5)
-#loc_label='upper right'
-gain=2.7 #e/ADU
+out_pdf_name=Config.get('params','OutPDFName')
+pp=PdfPages(out_dir+out_pdf_name)
 
-ysize=2048
-nchan=32
+sigma_cut=float(Config.get('params', 'SigmaCut'))
+gain=float(Config.get('params', 'Gain')) #e/ADU
+
+ysize=int(Config.get('params', 'YSize'))  #2048
+nchan=int(Config.get('params', 'NChan')) #32
 colsperchan=ysize/nchan
-nref=3
+nref= int(Config.get('params', 'NRef'))   #3
 
-stamp_string='three' 
+stamp_string=Config.get('params', 'StampString') 
 
-correct_NL=True
-correct_IPC=True
-simulation=False
-root_sim="TESTJULY21_90_V9"
-examine_ramps=True
+### dir sub_dark? start_flat start_spot region number (if corner)
+
+correct_NL_temp=Config.get('params', 'CorrectNL') 
+
+if correct_NL_temp == 'False':
+    correct_NL=False
+else:
+    correct_NL=True
+
+polynomial_order=int(Config.get('params', 'PolyOrder')) 
+
+if polynomial_order == 2:
+    fitfunc=fitfunc_quad
+elif polynomial_order == 3:
+    fitfunc=fitfunc_cubic
+else:
+    print  "Wrong polynomial order"
+    sys.exit()
 
 
-MASK=pf.open("/projector/aplazas/master-euclid-mask.fits")[0].data
+correct_IPC_temp=Config.get('params', 'CorrectIPC')
+
+if correct_IPC_temp == 'False':
+    correct_IPC=False
+else:
+    correct_IPC=True
+
+
+
+subtract_dark_temp=Config.get('params', 'SubtractDark') 
+
+if subtract_dark_temp == 'False':
+    subtract_dark=False
+else:
+    subtract_dark=True
+
+
+simulation_temp=Config.get('params', 'Simulation')
+
+if simulation_temp == 'False':
+    simulation=False
+else:
+    simulation=True
+
+
+examine_ramps_temp=Config.get('params', 'ExamineRamps')
+
+if examine_ramps_temp == 'False':
+    examine_ramps=False
+else:
+    examine_ramps=True
+
+
+start_sample_flats=int(Config.get('params', 'StartSampleFlats'))
+start_sample_spots=int(Config.get('params', 'StartSampleSpots'))
+
+mask_file=Config.get('params', 'BadPixelMask')
+MASK=pf.open(mask_file)[0].data
 
 npix_total=MASK.shape[0]*MASK.shape[1]
 
-centroid_threshold=0.1
+centroid_threshold=float(Config.get('params', 'CentroidThreshold'))
 nl_threshold_f, nl_threshold_s= 3.0, 3.0
 
 x_cut, y_cut = 10, 10
-centroid_type = 'center'
+centroid_type = Config.get('params', 'CentroidType')
+region=9999
 
 if centroid_type == 'center':
     MIN_CENTROID_THRESHOLD, MAX_CENTROID_THRESHOLD = 0.001, 0.0 + centroid_threshold
 elif centroid_type == 'corner':
    MIN_CENTROID_THRESHOLD, MAX_CENTROID_THRESHOLD = np.sqrt(2)*0.5 - centroid_threshold, np.sqrt(2)*0.5
+   region=int(Config.get('params', 'RegionCorner'))
 else: 
     print "Enter a vaild centroid type: center or corner."
     sys.exit(1)
 
-SEXTRACTOR="/usr/local/optical/sextractor/bin/sex"
+SEXTRACTOR=Config.get('params', 'SextractorPath')
+
+
+#old data, 1 micron filter (Y?), used for the paper 
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-000[0-9]*.fits"   # 10 ramps of darks
+#list_of_spots_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-02[3-9][0-9]*.fits" # andres-02[1-9][0-9]*.fits, 80 ramps of spots, wlamp=180 SPOTS
+#list_of_spots_ppl_2="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-030[0-9]*.fits"  # remaining 10 (initially 100 ramps, discarded first 10)
+#list_of_flats_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-00[3-9][0-9]*.fits"  ## Pick flats away from first ramps to avoid "burn-in", flats at 120W. Discard first 10.
+#list_of_flats_ppl_2="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-010[0-9]_000*.fits"  # remaining 10, 120W  
+
+
+#### TEMP 
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-0009*.fits"
+#list_of_spots_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-0229*.fits"
+#list_of_flats_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-0044*.fits"
 
 
 
-list_of_darks_ppl="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-000[0-9]*.fits"   # 10 ramps of darks
-list_of_spots_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-02[1-9][0-9]*.fits" # andres-02[1-9][0-9]*.fits, 80 ramps of spots, wlamp=180 SPOTS
-list_of_spots_ppl_2="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-030[0-9]*.fits"  # remaining 10 (initially 100 ramps, discarded first 10)
-list_of_flats_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-00[1-9][0-9]_000*.fits"  ## Pick flats away from first ramps to avoid "burn-in", flats at 120W. Discard first 10.
-list_of_flats_ppl_2="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-010[0-9]_000*.fits"  # remaining 10, 120W  
-list_of_darks_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*BACKGROUND*_00[1-2]*.fits"
-list_of_spots_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*OBJECT*.fits"
-list_of_flats_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*FLAT*.fits"
+##simulations
+#list_of_darks_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*BACKGROUND*_00[1-2]*.fits"
+#list_of_spots_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*OBJECT*.fits"
+#list_of_flats_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*FLAT*.fits"
 
 
-################################## 4. LOAD DATA ################################
+# New data with H filter, taken by Chaz on 2018-1-25
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-01-25/raw/BFdark000*.fits"
+#list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-01-25/raw/BFspot00[5-9]*.fits"
+#list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-01-25/raw/BFflat00[5-9]*.fits"
+
+#More new data, taken by Chaz on 2018-1-30, 2018-1-31, 2018-2-1 (see PPL log),  FILMSTRIP , reset starts at 0
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-01-30/DARKS/BF_Hband00[2]*.fits" # 30, 0000-0029
+#list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-01-31/SPOTS/BF_Hband00[6-9]*.fits" #100, 0000-0099
+#list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-02-01/FLATS/BF_Hband_flat00[6-9]*.fits" 
+
+
+#More new data, taken by Chaz on 2018-1-30, 2018-1-31, 2018-2-1 (see PPL log),  SOLO (individual files per frame)
+
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-02-01/SOLO/DARKS/*.fits" # 30*6
+#list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-02-01/SOLO/FLATS/*00[4-9]?_*.fits" # 100*6
+#list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-02-01/SOLO/SPOTS/*00[4-9]?_*.fits" # 100*6
+
+
+### FILSMTRIP, V2: time between reset and first sample to allow transients to decay. Il ne faut pas couper la pemiere sample. 
+
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-01-25/FILMSTRIP_V2/DARKS/BFdark00[1-2]*"
+#list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-01-25/FILMSTRIP_V2/FLATS/BFflat00[4-6]*.fits"  #6-9
+#list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-01-25/FILMSTRIP_V2/SPOTS/BFspot00[3-6]*.fits"   # 100 
+### NEW DARKS, ONLY TO BE USED IN V2 MODE. Use the ones that start at 1000  (7 samples, 20 seconds). 1-100: 6 samples, 16 seconds
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-02-21/DARKS_V2/BF_dark10[4-5]*.fits"
 
 
 
+######## MORE H-band data but with mask from H-badn filter. Feweer spots, but maybe better contrast
+#FLATS:   2018-03-06/  BF_Hband_f8_cal*.fits  (100-189)
+#DARKS:  2018-03-06/  BF_dark*.fits  (0-99)
+#SPOTS:  2018-03-07/  BF_Hband_mask2_f8_nocube*.fits  (0-99, 1000-1099)
+
+#It is back to the old mask with ~18000 spots.  By eye it looks like the center/neighbor contrast will be closer to 5.  This is for f/8, and I may also get some data for f/11.
+
+#list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-03-06/DARKS/BF_dark00[3-4]*.fits"
+#list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-03-06/FLATS/BF_Hband_f8_cal01[3-8]*.fits"
+#list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-03-07/SPOTS/FIRST_SET/BF_Hband_mask2_f8_nocube00[3-9]*.fits"
+
+
+
+list_of_darks_ppl=Config.get('params', 'ListDarksPPL')
+list_of_flats_ppl=Config.get('params', 'ListFlatsPPL')
+list_of_spots_ppl=Config.get('params', 'ListSpotsPPL')
+
+list_of_darks_sims=Config.get('params', 'ListDarksSimulation')
+list_of_flats_sims=Config.get('params', 'ListFlatsSimulation')
+list_of_spots_sims=Config.get('params', 'ListSpotsSimulation')
+
+
+
+################################# 4. LOAD DATA ################################
 ### DATA: Andres's data, 03-02-17, check the PPL log in Dropbox. 
+
 
 if simulation == False: 
     ## PPL DATA
@@ -1188,16 +1254,24 @@ if simulation == False:
     files_darks=glob.glob(list_of_darks_ppl) 
     
     #Spots:
-    files1=glob.glob(list_of_spots_ppl_1)  
-    files2=glob.glob(list_of_spots_ppl_2)     
-    files_spots=sorted(files1+files2)
+    
+    #files1=glob.glob(list_of_spots_ppl_1)  
+    #files2=glob.glob(list_of_spots_ppl_2)     
+    #files_spots=sorted(files1 +files2)
+ 
+    files=glob.glob(list_of_spots_ppl)
+    files_spots=sorted(files)
+
 
     #Flats
 
-    files1=glob.glob(list_of_flats_ppl_1)   
-    files2=glob.glob(list_of_flats_ppl_2)  
+    #files1=glob.glob(list_of_flats_ppl_1)   
+    #files2=glob.glob(list_of_flats_ppl_2)  
+    #files_flats=sorted(files1 +files2)
 
-    files_flats=sorted(files1+files2)
+    files=glob.glob(list_of_flats_ppl)
+    files_flats=sorted(files)
+
 
 else:
     
@@ -1208,28 +1282,60 @@ else:
 
    
 
-allDarks, infoDarks = badger.getRampsFromFiles(sorted(files_darks))
+allDarks, infoDarks = badger.getRampsFromFiles((files_darks))
 files_darks=0
 
-allSpots, infoSpots = badger.getRampsFromFiles(sorted(files_spots))
+allSpots, infoSpots = badger.getRampsFromFiles((files_spots))
 files_spots=0
 
-allFlats, infoFlats = badger.getRampsFromFiles(sorted(files_flats))
+allFlats, infoFlats = badger.getRampsFromFiles((files_flats))
 files_flats=0
+
+
+discard_spots_temp=Config.get('params', 'DiscardSpots')
+discard_flats_temp=Config.get('params', 'DiscardFlats')
+discard_darks_temp=Config.get('params', 'DiscardDarks')
+
+
+discard_spots=[]
+discard_flats=[]
+discard_darks=[]
+
+if discard_spots_temp == "-1":
+    discard_spots=[]
+else:
+    for x in discard_spots_temp.split():
+        discard_spots.append(int(x))
+
+if discard_flats_temp == "-1":
+    discard_flats=[]
+else:
+    for x in discard_flats_temp.split():
+        discard_flats.append(int(x))
+
+if discard_darks_temp == "-1":
+    discard_darks=[]
+else:
+    for x in discard_darks_temp.split():
+        discard_darks.append(int(x))
 
 
 ### In addition to discarding first 10 ramps for burn-in (when reading the list of files above), get rid of individual ramps that dod not look like the others  
 if examine_ramps == True: 
-  allDarks=plot_ratio_ramps (allDarks, title='Darks', discard=[6])
-  allFlats=plot_ratio_ramps (allFlats, title='Flats', discard=range(1,15)) #[1,2,3,4,5,6,7,8,9,10])
-  allSpots=plot_ratio_ramps (allSpots, title='Spots', discard=range(1,15)+[72]) #1,2,3,4,5,6,7,8,9,10,21,24,25]+[26,27,28,30,32,33,34,36,37,38,42,46,54])
+  allDarks=plot_ratio_ramps (allDarks, title='Darks \n%s'%list_of_darks_ppl, discard=discard_spots) # , discard=range(0,15))#,discard=[6]) # discard=range(0,11)) #, discard=[6])
+  allFlats=plot_ratio_ramps (allFlats, title='Flats \n%s'%list_of_flats_ppl, discard=discard_flats) #, discard=range(0,15)+[55,57,54,59])#,discard=range(0,15) + [18]) # discard=range(70,74))     #, discard=range(1,15) + [18])
+  allSpots=plot_ratio_ramps (allSpots, title='Spots \n%s'%list_of_spots_ppl, discard=discard_darks) #, discard=[4,20,22,32,33] )# , discard=range(0,15))# discard=range(0,11))#, discard=range(1,15)) #1,2,3,4,5,6,7,8,9,10,21,24,25]+[26,27,28,30,32,33,34,36,37,38,42,46,54])
 
+  #filmstrip discard=range(0,11); discard=range(0,11)+[19,41,13,52,31], discard=range(0,15)
+
+
+#pp.close()
+#sys.exit()
 
 
 print "len all Spots, allFlats, allDarks:", len(allSpots), len(allFlats), len(allDarks)
 print "infoSpots: ", infoSpots
-
-
+#sys.exit()
 ################################## 5. STACK DATA ################################
 
 
@@ -1240,16 +1346,18 @@ if len(allSpots) < 40:
     temp_spots=np.median(allSpots, axis=0)
     temp_flats=np.median(allFlats, axis=0)
 else:
-    midpoint=len(allSpots)/3
+    midpoint=len(allSpots)/4
     a= np.median(allSpots[:midpoint], axis=0)
     b= np.median(allSpots[midpoint:2*midpoint], axis=0)
-    c= np.median(allSpots[2*midpoint:], axis=0)
-    temp_spots= (a+b+c)*1./3
+    c= np.median(allSpots[2*midpoint:3*midpoint], axis=0)
+    d= np.median(allSpots[3*midpoint:], axis=0)
+    temp_spots= (a+b+c+d)*1./4
 
     a= np.median(allFlats[:midpoint], axis=0)
     b= np.median(allFlats[midpoint:2*midpoint], axis=0)
-    c= np.median(allFlats[2*midpoint:], axis=0)
-    temp_flats=(a+b+c)*1./3
+    c= np.median(allFlats[2*midpoint:3*midpoint], axis=0)
+    d= np.median(allFlats[3*midpoint:], axis=0)
+    temp_flats=(a+b+c+d)*1./4
 
 
 
@@ -1268,8 +1376,8 @@ shapes_flats = temp_flats.shape
 shapes_darks = temp_darks.shape
 
 
-start_sample_spots, end_sample_spots=1, shapes_spots[0] 
-start_sample_flats, end_sample_flats=1, shapes_flats[0]  
+end_sample_spots= shapes_spots[0] #
+end_sample_flats= shapes_flats[0] #
 
 
 data_spots=np.zeros(shapes_spots)
@@ -1279,9 +1387,9 @@ data_flats=np.zeros(shapes_flats)
 print "shapes_spots, shapes_darks, shapes_flats: ", shapes_spots, shapes_darks, shapes_flats
 
 
-if not shapes_spots [0] == shapes_darks[0]:
-    print "Mean spot ramp and mean dark ramps don't have same number of samples/frames. "
-    sys.exit()
+#if not shapes_spots [0] == shapes_darks[0]:
+#    print "Mean spot ramp and mean dark ramps don't have same number of samples/frames. "
+#    sys.exit()
 
 
 ### CHAZ" 
@@ -1406,9 +1514,9 @@ allDarks=0
 allFlats=0
 
 
-if not infoDarks['EXPTIME'][0] == infoSpots['EXPTIME'][0]: 
-    print "Exposure time for spots and darks is not the same."
-    sys.exit(1)
+#if not infoDarks['EXPTIME'][0] == infoSpots['EXPTIME'][0]: 
+#    print "Exposure time for spots and darks is not the same."
+#    sys.exit(1)
 
 
 print "infoDarks['sample'][0]: ", infoDarks['sample'][0] 
@@ -1418,15 +1526,45 @@ print "shapes_darks[0]: ", shapes_darks[0]
 print "shapes_flats[0]: ", shapes_spots[0]
 
 
-time_darks=np.linspace(0.0, infoDarks['EXPTIME'][0], shapes_darks[0])
+
+#time_darks=np.linspace(infoDarks['FRAMTIME'][0], infoDarks['sample'][0]*infoDarks['FRAMTIME'][0], infoDarks['sample'][0]+1)
+
+time_darks=np.linspace(0.0, infoDarks['sample'][0]*infoDarks['FRAMTIME'][0], infoDarks['sample'][0]+1)
 time_darks=time_darks[start_sample_spots:end_sample_spots]
 
-time_flats=np.linspace(0.0, infoFlats['EXPTIME'][0], shapes_flats[0])
+
+#temp=np.linspace(0.0, infoDarks['EXPTIME'][0], shapes_darks[0])
+
+
+#print "TIME DARKS: "
+#print "infoDarks['sample'][0]*infoDarks['FRAMTIME'][0]: ", infoDarks['sample'][0]*infoDarks['FRAMTIME'][0]
+#print "infoDarks['sample'][0]+1", infoDarks['sample'][0]+1
+#print "OLD VERSION: "
+#print "infoDarks['EXPTIME'][0]", infoDarks['EXPTIME'][0]
+#print "shapes_darks[0]: ", shapes_darks[0]
+
+#print "time_darks: ", time_darks
+#print "temp (old): ", temp
+#sys.exit()
+
+
+
+#time_flats=np.linspace(infoFlats['FRAMTIME'][0], infoFlats['sample'][0]*infoFlats['FRAMTIME'][0], infoFlats['sample'][0]+1)
+
+time_flats=np.linspace(0.0, infoFlats['sample'][0]*infoFlats['FRAMTIME'][0], infoFlats['sample'][0]+1)
 time_flats=time_flats[start_sample_flats:end_sample_flats]
 
 
+
+#time_spots=time_darks
+
 print "len(time_darks), len(time_flats): ", len(time_darks), len(time_flats)
 print "len(GLOBAL_SPOTS): ", len(GLOBAL_SPOTS)
+
+
+print "Time darks:", time_darks
+print "Time flats:", time_flats
+#sys.exit()
 
 
 if not len(time_flats) == len(GLOBAL_FLATS):
@@ -1444,8 +1582,6 @@ if not len(time_darks) == len(darks):
     print "len(time_darks) not the same as len(GLOBAL_darks)"
     print len(time_darks), len(darks)
     sys.exit()
-
-
 
 
 
@@ -1503,8 +1639,7 @@ if simulation == False:
     print "last.shape: ", last.shape
     cmd="rm science_andres.fits"; run_shell_cmd(cmd)
     pf.writeto ("science_andres.fits", last, clobber=True)
-
-    prefix="hola"	
+    prefix="hola"
     cmd="%s science_andres.fits, science_andres.fits -c daofind_sex_detection.config"%(SEXTRACTOR); run_shell_cmd (cmd)
     cmd="mkdir -v %s" %out_dir; run_shell_cmd(cmd)
     out=out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
@@ -1512,7 +1647,6 @@ if simulation == False:
     cmd="mv output.cat %s" %(out); run_shell_cmd(cmd)
     cmd="rm science_andres.fits"; run_shell_cmd(cmd)
 
-    
     out=out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
 
     ## REad position from detected objects catalog
@@ -1546,7 +1680,7 @@ x_int, y_int = np.rint(x_d), np.rint(y_d)
 
 
 LAST_TEST= GLOBAL_SPOTS[-1]
-pf.writeto(out_dir+"LAST.fits", LAST_TEST, clobber=True)
+#pf.writeto(out_dir+"LAST.fits", LAST_TEST, clobber=True)
 
 base_pix=7
 temp_hist2=[]
@@ -1625,17 +1759,50 @@ for (xc, yc) in zip (x_int, y_int):
             print "HOLA", xc, yc, norm_centroid, flux
 
     if  centroid_type == 'corner':
-        if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid > 0) and (y_centroid > 0):    #Region 4
+
+        if region == 4: 
+            if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid > 0) and (y_centroid > 0):    #Region 4
         #if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid < 0) and (y_centroid > 0):    #Region 3
         #if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid > 0) and (y_centroid < 0):    #Region 2
         #if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid < 0) and (y_centroid < 0):     #Region 1
-            x_int_filtered.append(xc)
-            y_int_filtered.append(yc)
-            flux_filtered.append(flux)
-            central_filtered.append(flux_central)
-            x_centroid_filtered.append(x_centroid)
-            y_centroid_filtered.append(y_centroid)
-            print "HOLA CORNER", xc, yc, norm_centroid, flux  
+                x_int_filtered.append(xc)
+                y_int_filtered.append(yc)
+                flux_filtered.append(flux)
+                central_filtered.append(flux_central)
+                x_centroid_filtered.append(x_centroid)
+                y_centroid_filtered.append(y_centroid)
+                print "HOLA CORNER", xc, yc, norm_centroid, flux  
+
+        if region == 3: 
+            if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid < 0) and (y_centroid > 0):    #Region 3
+                x_int_filtered.append(xc)
+                y_int_filtered.append(yc)
+                flux_filtered.append(flux)
+                central_filtered.append(flux_central)
+                x_centroid_filtered.append(x_centroid)
+                y_centroid_filtered.append(y_centroid)
+                print "HOLA CORNER", xc, yc, norm_centroid, flux
+
+        if region ==2 : 
+            if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid > 0) and (y_centroid < 0):
+                x_int_filtered.append(xc)
+                y_int_filtered.append(yc)
+                flux_filtered.append(flux)
+                central_filtered.append(flux_central)
+                x_centroid_filtered.append(x_centroid)
+                y_centroid_filtered.append(y_centroid)
+                print "HOLA CORNER", xc, yc, norm_centroid, flux
+
+        if region ==1:
+            if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid < 0) and (y_centroid < 0):
+                x_int_filtered.append(xc)
+                y_int_filtered.append(yc)
+                flux_filtered.append(flux)
+                central_filtered.append(flux_central)
+                x_centroid_filtered.append(x_centroid)
+                y_centroid_filtered.append(y_centroid)
+                print "HOLA CORNER", xc, yc, norm_centroid, flux
+
 
 x_int_filtered=np.array(x_int_filtered)
 y_int_filtered=np.array(y_int_filtered)
@@ -1657,8 +1824,6 @@ ax.set_xlabel("x centroid")
 ax.set_ylabel("y centroid")
 pp.savefig()
 
-
-end=-1
 
 temp_hist2=np.array(temp_hist2)
 m,dev,indixec = sigma_clip.sigma_clip(temp_hist2,niter=6, nsig=sigma_cut, get_indices=True, verbose=False)
@@ -1732,7 +1897,7 @@ def initialize_ramps_dict (ramps_dict):
         for i in range(STAMP_SIZE):
             ramps_dict[(j,i)]=[]
 
-ramps_dict_all, ramps_dict_all_jay={},{}
+ramps_dict_all, ramps_dict_all_jay, ramps_dict_all_jay_no_norm={},{},{}
 ramps_dict_fbin1={}
 ramps_dict_fbin2={}
 ramps_dict_fbin3={}
@@ -1743,6 +1908,7 @@ ramps_dict_all_jay_mean_signal={}
 initialize_ramps_dict (ramps_dict_all_jay_mean_signal)
 initialize_ramps_dict (ramps_dict_all)
 initialize_ramps_dict (ramps_dict_all_jay)
+initialize_ramps_dict (ramps_dict_all_jay_no_norm)
 initialize_ramps_dict (ramps_dict_fbin1)
 initialize_ramps_dict (ramps_dict_fbin2)
 initialize_ramps_dict (ramps_dict_fbin3)
@@ -1774,13 +1940,14 @@ residual_vec=[]
 ratio_fluxes_vec=[]
 diff_fluxes_vec=[]
 
-signal_flat_SUPER_VEC=[]
-signal_spot_SUPER_VEC=[]
+#signal_flat_SUPER_VEC=[]
+#signal_spot_SUPER_VEC=[]
 
 signal_deficit_central_pixel_spots=[]
 signal_deficit_central_pixel_flats=[]
 
 dict_residual={(0,0):[],(0,1):[],(0,2):[],(1,0):[],(1,1):[],(1,2):[],(2,0):[],(2,1):[],(2,2):[]}
+dict_residual_absolute={(0,0):[],(0,1):[],(0,2):[],(1,0):[],(1,1):[],(1,2):[],(2,0):[],(2,1):[],(2,2):[]}
 dict_median_flux_flats={(0,0):[],(0,1):[],(0,2):[],(1,0):[],(1,1):[],(1,2):[],(2,0):[],(2,1):[],(2,2):[]}
 dict_median_flux_spots={(0,0):[],(0,1):[],(0,2):[],(1,0):[],(1,1):[],(1,2):[],(2,0):[],(2,1):[],(2,2):[]}
 
@@ -1792,10 +1959,18 @@ SUM_STAMP_2D_DARKS=[]
 
 end=-1
 for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filtered[:end], flux_filtered[:end], central_filtered[:end]) ):
-    
+    if xc < x_cut or yc < y_cut: 
+        print "skipping: ", xc, yc
+        continue 
+    #if (xc,yc) in [(1251,10),(1259,10)]:
+    #    continue
+ 
+
+
 
     stamp=GLOBAL_SPOTS[-1][yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
     stamp_mask = MASK [yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
+    print "stamp_mask sum: ", np.sum(stamp_mask)
     if not np.sum(stamp_mask) == 0:
 	print "Discarding spot because it has at least one bad pixel"
         continue
@@ -1836,6 +2011,16 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
     c2_mat_spots_corr_err=0*stamp
 
     c1_mat_spots=0*stamp
+    c1_mat_flats=0*stamp
+    c1_mat_darks=0*stamp  
+  
+
+
+
+    if polynomial_order == 3: 
+        c3_mat_flats=1.1e-11*np.ones_like(stamp)
+
+
 
     counter=1
     fig2=plt.figure()
@@ -1874,10 +2059,13 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
 
     dict_B={(1,1):[[],[]], (1,0):[[],[]], (0,1):[[],[]], (2,1):[[],[]], (1,2):[[],[]]}
 
+    
 
+
+    RESIDUAL_ABSOLUTE_STAMP_VEC=[]
     ## For each source, looop over pixels in postage stamp 
     for i,k in zip(stamp_range_global_x, stamp_range_local):
-        #if i == 0 or i == 4: continue
+
         for j,l in zip(stamp_range_global_y, stamp_range_local):
             #if j == 0 or j == 4: continue
             i,j=int(i), int(j)
@@ -1894,7 +2082,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             #plot_pixel_ramp(ramp=stamp_flats, time=time, i=k,j=l, fig=fig2, counter=counter, plot_flag=False)
             #plot_pixel_ramp(ramp=stamp_spots, time=time, fig=fig3, i=k,j=l, counter=counter, fmt='b-o', plot_flag=False)
             
-            p_flat, cov_flat, chi2_flat,flag1, signal_flat =fit_pixel_ramp (ramp=stamp_flats,time=time_flats, i=k, j=l, pinit=pinit)
+            p_flat, cov_flat, chi2_flat,flag1, signal_flat =fit_pixel_ramp (ramp=stamp_flats,time=time_flats, i=k, j=l, order=polynomial_order)
             if flag1 == True:
                 #siga=True
                 print "flat fit"
@@ -1904,7 +2092,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
  
             print p_flat[0]
             time_darks=np.array(time_darks) 
-            p_spot, cov_spot, chi2_spot,flag2, signal_spot =fit_pixel_ramp (ramp=stamp_spots,time=time_darks, i=k, j=l, pinit=pinit)         
+            p_spot, cov_spot, chi2_spot,flag2, signal_spot =fit_pixel_ramp (ramp=stamp_spots,time=time_darks, i=k, j=l, order=polynomial_order)         
 
 
             if flag2 == True:
@@ -1915,10 +2103,10 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             print p_spot[0]           
 
             
-            print time_flats, p_flat
-            print time_darks, p_spot
+            print "time_flats, p_flat", time_flats, p_flat
+            print "time_darks, p_spot", time_darks, p_spot
  
-            p_dark, cov_dark, chi2_dark,flag3, signal =fit_pixel_ramp (ramp=stamp_darks,time=time_darks, i=k, j=l, pinit=pinit)
+            p_dark, cov_dark, chi2_dark,flag3, signal_dark =fit_pixel_ramp (ramp=stamp_darks,time=time_darks, i=k, j=l, order=polynomial_order)
             if flag3 == True: 
                 #siga=True
                 print "dark fit"
@@ -1927,15 +2115,24 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             
             #if i == xc and j == yc:
             ### To test NL model, print data - model / model for centra pixel in flats
-            model_flat = fitfunc (time_flats, p_flat[0], p_flat[1], p_flat[2])
+            model_flat = fitfunc (time_flats, *p_flat)
             if not len (model_flat) == len (signal_flat):
                     print "Lengths of model and signal in flat not the same"
                     sys.exit(1)
-            residual=100*(signal_flat - model_flat)/ model_flat
-            print "MODEL RESIDUAL IN  PIXEL: ", k,l,  residual
+            residual_absolute=(signal_flat - model_flat)
+
+            RESIDUAL_ABSOLUTE_STAMP_VEC.append(residual_absolute)
+
+
+            residual=100*residual_absolute/ model_flat
+            print "MODEL ABSOLUTE RESIDUAL AND RELATIVE RESIDUAL (%) IN  PIXEL: ", k,l,  residual_absolute, residual
+            print "polynomial order: ", polynomial_order            
 
             dict_residual[(k,l)].append(residual)
-                
+            dict_residual_absolute[(k,l)].append(residual_absolute)            
+
+
+    
             dict_median_flux_flats[(k,l)].append(signal_flat)
             dict_median_flux_spots[(k,l)].append(signal_spot)
 
@@ -1943,7 +2140,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
  
             print "p_flat[0], p_dark[0], p_spot[0]: ", p_flat[0], p_dark[0], p_spot[0]
 
-            p_spot_corr, cov_spot_corr, chi2_spot_corr, flag4, flux_rate_spots, delta_signal_spots, delta_sums_spots, signal_corrected_spots = correct_and_fit_pixel_ramp (ramp=stamp_spots, dark_ramp=stamp_darks, time=time_darks, i=k, j=l, pinit=pinit, c0_spot=p_spot[0], c0_dark=p_dark[0], c1_spot=p_spot[1], c1_dark=p_dark[1], c2=p_spot[2])
+            p_spot_corr, cov_spot_corr, chi2_spot_corr, flag4, flux_rate_spots, delta_signal_spots, delta_sums_spots, signal_corrected_spots = correct_and_fit_pixel_ramp (ramp=stamp_spots, dark_ramp=stamp_darks, time=time_darks, i=k, j=l, pinit=pinit_quad, c0_spot=p_spot[0], c0_dark=p_dark[0], c1_spot=p_spot[1], c1_dark=p_dark[1], c2=p_spot[2])
             
             if (k,l) in [(1,1), (1,0), (0,1), (1,2), (2,1)]:
                 dict_B[(k,l)][0]=p_spot_corr
@@ -1953,7 +2150,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             
             print "Last sampe of stamp flats: ", stamp_flats[-1]
 
-            p_flat_corr, cov_flat_corr, chi2_flat_corr, flag4, flux_rate_flats, delta_signal_flats, delta_sum_flats, signal_corrected_flats = correct_and_fit_pixel_ramp (ramp=stamp_flats, dark_ramp=stamp_darks, time=time_flats, i=k, j=l, pinit=pinit, c0_spot=p_flat[0], c0_dark=p_dark[0], c1_spot=p_flat[1], c1_dark=p_dark[1], c2=p_flat[2])
+            p_flat_corr, cov_flat_corr, chi2_flat_corr, flag4, flux_rate_flats, delta_signal_flats, delta_sum_flats, signal_corrected_flats = correct_and_fit_pixel_ramp (ramp=stamp_flats, dark_ramp=stamp_darks, time=time_flats, i=k, j=l, pinit=pinit_quad, c0_spot=p_flat[0], c0_dark=p_dark[0], c1_spot=p_flat[1], c1_dark=p_dark[1], c2=p_flat[2])
 
             #if l == 1 and k == 2:
             #    print "Spots: ", p_spot, p_spot_corr
@@ -1989,20 +2186,27 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             print " "
 
 
+            if polynomial_order == 3: 
+                c3_mat_flats[l,k] = p_flat[3]
+           
             c2_mat_flats[l,k], c2_mat_flats_err[l,k]=p_flat[2], np.diag(cov_flat)[2] 
             c2_mat_spots[l,k], c2_mat_spots_err[l,k]=p_spot[2], np.diag(cov_spot)[2]
             c2_mat_spots_corr[l,k], c2_mat_spots_corr_err[l,k] =p_spot_corr[2], np.diag(cov_spot_corr)[2]
+            c1_mat_spots[l,k]=p_spot[1]
+            c1_mat_flats[l,k]=p_flat[1]
+            c1_mat_darks[l,k]=p_dark[1]
             c0_mat_spots[l,k]=p_spot[0]
-            c1_mat_spots[l,k]=p_spot[1]           
             c0_mat_flats[l,k]=p_flat[0]
             c0_mat_darks[l,k]=p_dark[0]
 
 
             """
             diff_last_first = GLOBAL_SPOTS[-1][yc-2:yc+3, xc-2:xc+3] - GLOBAL_SPOTS[0][yc-2:yc+3, xc-2:xc+3]
-            delta_t=time[-1] - time[-2]
+            delta_t=time_darks[-1] - time_darks[-2]
             NORM = np.sum(diff_last_first)/ (  (len(GLOBAL_SPOTS)-1)   *delta_t)            
 
+            
+           
             s_vec=[]
             val0=flux_rate_spots[0]
             for val in flux_rate_spots:
@@ -2012,6 +2216,11 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             """
        
             counter+=1
+
+
+    #RESIDUAL_ABSOLUTE_STAMP_VEC=np.array(RESIDUAL_ABSOLUTE_STAMP_VEC)
+    #if (np.abs(RESIDUAL_ABSOLUTE_STAMP_VEC) > 200).any():    #reisdual big in any of the frames of the 9 pixels, discard spot
+    #    continue 
 
 
     if L in to_plot:
@@ -2043,13 +2252,52 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
         print " "
         corr_stamp_spots = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_spots-stamp)) )
         corr_stamp_darks = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_darks-dark_stamp)) )
-        print "corr_stamp_darks: ", corr_stamp_darks
+        print "corr_stamp_darks method 1: ", corr_stamp_darks
         print " "
+       
         
-        if correct_NL == False:
-            corr_stamp = stamp - dark_stamp
+        """
+        corr_stamp_spots=1.0*np.ones_like(stamp)
+        corr_stamp_darks=1.0*np.ones_like(stamp)
+        
+        
+        if polynomial_order == 3: 
+            print "c3_mat_flats", c3_mat_flats
+            for (j,i),s_temp in np.ndenumerate(stamp):
+                roots_cubic_spots = np.roots ([c3_mat_flats[j,i]*c1_mat_spots[j,i]**3, c2_mat_flats[j,i]*c1_mat_spots[j,i]**2, c1_mat_spots[j,i], c0_mat_spots[j,i] - s_temp])
+                corr_stamp_spots[j,i] = c1_mat_spots[j,i]*np.real(roots_cubic_spots[2]) # the first two roots are complex
+
+                roots_cubic_darks = np.roots ([c3_mat_flats[j,i]*c1_mat_darks[j,i]**3, c2_mat_flats[j,i]*c1_mat_darks[j,i]**2, c1_mat_darks[j,i], c0_mat_darks[j,i] - dark_stamp[j,i]])
+                corr_stamp_darks[j,i] = c1_mat_darks[j,i]*np.real(roots_cubic_darks[2]) # the first two roots are complex
+                                       
+        elif polynomial_order == 2:
+            for (j,i),s_temp in np.ndenumerate(stamp):
+                roots_quad_spots = np.roots ([c2_mat_flats[j,i]*c1_mat_spots[j,i]**2, c1_mat_spots[j,i], c0_mat_spots[j,i] - s_temp])
+                corr_stamp_spots[j,i] = c1_mat_spots[j,i]*np.real(roots_quad_spots[1])
+
+                roots_quad_darks = np.roots ([c2_mat_flats[j,i]*c1_mat_darks[j,i]**2, c1_mat_darks[j,i], c0_mat_darks[j,i] - dark_stamp[j,i]])
+                corr_stamp_darks[j,i] = c1_mat_darks[j,i]*np.real(roots_quad_darks[1]) 
+                
         else:
-            corr_stamp = corr_stamp_spots - corr_stamp_darks
+            print "Wrong polynomial order: ", polynomial_order
+            sys.exit()
+        
+
+        print "corr_stamp_darks method 2: ", corr_stamp_darks
+        #sys.exit()
+        """
+
+ 
+        if correct_NL == False:
+            if subtract_dark == True:
+                corr_stamp = stamp - dark_stamp
+            else:
+                corr_stamp = stamp
+        else:
+            if subtract_dark == True: 
+                corr_stamp = corr_stamp_spots - corr_stamp_darks 
+            else:
+                corr_stamp = corr_stamp_spots
 
         print "corr_stamp_spots: ", corr_stamp_spots
 	#print "corr_stamp_darks: ", corr_stamp_darks
@@ -2078,13 +2326,44 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
         print " "
         corr_stamp_flats = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_flats-stamp)) )
         corr_stamp_darks = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_darks-dark_stamp)) )
-        print "corr_stamp_darks: ", corr_stamp_darks
+        #print "corr_stamp_darks: ", corr_stamp_darks
         print " "
 
-        if correct_NL == False:
-            corr_stamp = stamp - dark_stamp
+        """
+        corr_stamp_flats=1.0*np.ones_like(stamp)
+        corr_stamp_darks=1.0*np.ones_like(stamp)
+        
+        if polynomial_order == 3:
+            for (j,i),s_temp in np.ndenumerate(stamp):
+                roots_cubic_spots = np.roots ([c3_mat_flats[j,i]*c1_mat_flats[j,i]**3, c2_mat_flats[j,i]*c1_mat_flats[j,i]**2, c1_mat_flats[j,i], c0_mat_flats[j,i] - s_temp])
+                corr_stamp_flats[j,i] = c1_mat_flats[j,i]*np.real(roots_cubic_spots[2]) # the first two roots are complex
+
+                roots_cubic_darks = np.roots ([c3_mat_flats[j,i]*c1_mat_darks[j,i]**3, c2_mat_flats[j,i]*c1_mat_darks[j,i]**2, c1_mat_darks[j,i], c0_mat_darks[j,i] - dark_stamp[j,i]])
+                corr_stamp_darks[j,i] = c1_mat_darks[j,i]*np.real(roots_cubic_darks[2]) # the first two roots are complex
+
+        elif polynomial_order == 2:
+            for (i,j),s_temp in np.ndenumerate(stamp):
+                roots_quad_flats = np.roots ([c2_mat_flats[j,i]*c1_mat_flats[j,i]**2, c1_mat_flats[j,i], c0_mat_flats[j,i] - s_temp])
+                corr_stamp_flats[j,i] = c1_mat_flats[j,i]*np.real(roots_quad_flats[1])
+
+                roots_quad_darks = np.roots ([c2_mat_flats[j,i]*c1_mat_darks[j,i]**2, c1_mat_darks[j,i], c0_mat_darks[j,i] - dark_stamp[j,i]])
+                corr_stamp_darks[j,i] = c1_mat_darks[j,i]*np.real(roots_quad_darks[1]) 
+
         else:
-            corr_stamp = corr_stamp_flats - corr_stamp_darks
+            print "Wrong polynomial order: ", polynomial_order
+            sys.exit()
+        """
+
+        if correct_NL == False:
+            if subtract_dark == True:
+                corr_stamp = stamp - dark_stamp
+            else:
+                corr_stamp = stamp
+        else:
+            if subtract_dark==True:
+                corr_stamp = corr_stamp_flats - corr_stamp_darks   #  TEMP!!!!!!
+            else:
+                corr_stamp = corr_stamp_flats 
 
         print "corr_stamp_flats: ", corr_stamp_flats
         #print "corr_stamp_darks: ", corr_stamp_darks
@@ -2200,12 +2479,15 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
                 
 
 
-
-            #NORM=1
+            #if no_norm==True:   # for Fig. 6 of paper, red data 
+            #    NORM=1
+            s_vec_jay_no_norm=s_vec_jay.copy()           
+            #NORM=1 ### TEMP!!!!! 
             #### Actual f_N metric
-            s_vec_jay/=NORM    
+            s_vec_jay=s_vec_jay/NORM    
 
-
+            print "s_vec_jay, s_vec_jay_no_norm, NORM : ", s_vec_jay, s_vec_jay_no_norm, NORM 
+            #sys.exit() 
 
             print "CHAZ's metric: delta_sig, delta_sum, s_vec ", delta_sig, delta_sum, s_vec
             print "JAY's metric: NORM, rates_vec_jay, s_vec_jay ", NORM, rates_vec_jay, s_vec_jay
@@ -2230,6 +2512,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
                 fc=1000*(c-sum)
                 c1=dict_B[(1,1)][0][1]*1000
                 c2=dict_B[(1,1)][0][2]
+                if fc == 0: continue
                 b = 2*(c1)*(c2)/fc
 
                 samples=range(1, len(s_vec_jay) + 1)
@@ -2254,7 +2537,8 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
   
             ramps_dict_all[(l,k)].append(s_vec)
             ramps_dict_all_jay[(l,k)].append(s_vec_jay)
-    
+            ramps_dict_all_jay_no_norm[(l,k)].append(s_vec_jay_no_norm)
+ 
             ##
             ramps_dict_all_jay_mean_signal[(l,k)].append(delta_mean_signal)
             
@@ -2332,14 +2616,14 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
     super_counter+=1
 
 SUM_STAMP_2D=np.array(SUM_STAMP_2D)
-MEDIAN_STAMP=np.median(SUM_STAMP_2D, axis=0)
+MEDIAN_STAMP=np.nanmedian(SUM_STAMP_2D, axis=0)
 
 SUM_STAMP_2D_FLATS=np.array(SUM_STAMP_2D_FLATS)
-MEDIAN_STAMP_FLATS=np.median(SUM_STAMP_2D_FLATS, axis=0)
+MEDIAN_STAMP_FLATS=np.nanmedian(SUM_STAMP_2D_FLATS, axis=0)
 
 
 SUM_STAMP_2D_DARKS=np.array(SUM_STAMP_2D_DARKS)
-MEDIAN_STAMP_DARKS=np.median(SUM_STAMP_2D_DARKS, axis=0)
+MEDIAN_STAMP_DARKS=np.nanmedian(SUM_STAMP_2D_DARKS, axis=0)
 
 
 
@@ -2350,15 +2634,24 @@ MEDIAN_STAMP_DARKS=np.median(SUM_STAMP_2D_DARKS, axis=0)
 fig1=plt.figure()
 ax=fig1.add_subplot (1,1,1)
 cax=ax.imshow(MEDIAN_STAMP, cmap=cm.gray, origin="lower", interpolation='nearest')#, vmin=mean_science - mean_science/factor, vmax=mean_science + mean_science/factor)
+label_vec=[]
 for (j,i),label in np.ndenumerate(MEDIAN_STAMP):
             print j,i, label
+            label_float = label/(time_darks[-1]/1e3)
             label="%g e$^{-}$/s \n (%g e$^{-}$)" %(label/(time_darks[-1]/1e3), label)
             if j == 1 and i == 1:
                 ax.text(i,j,label,ha='center',va='center', color='black', size=11)
             else:
                 ax.text(i,j,label,ha='center',va='center', color='white', size=11) 
-
+            label_vec.append(label_float)
+plt.suptitle ("Median stamp spots")
 pp.savefig()
+
+label_vec=np.array(label_vec)
+np.savetxt (out_dir+"jay_median_spot_fluxes.dat", label_vec)
+
+print MEDIAN_STAMP
+#sys.exit()
 
 #DARKS
 fig1=plt.figure()
@@ -2372,6 +2665,7 @@ for (j,i),label in np.ndenumerate(MEDIAN_STAMP_DARKS):
             else:
                 ax.text(i,j,label,ha='center',va='center', color='white', size=11)
 
+plt.suptitle("Median stamp darks")
 pp.savefig()
 
 
@@ -2403,7 +2697,7 @@ for (j,i),label in np.ndenumerate(MEDIAN_STAMP_FLATS):
             else:
                 ax.text(i,j,label,ha='center',va='center', color='white', size=9)
 
-
+plt.suptitle ("Median stamp spots and flats")
 pp.savefig()
 
 
@@ -2418,13 +2712,20 @@ diff_fluxes_vec=np.array(diff_fluxes_vec)
 
 
 signal_deficit_central_pixel_spots=np.array(signal_deficit_central_pixel_spots)
-#signal_deficit_central_pixel_flats=np.array(signal_deficit_central_pixel_flats)
+signal_deficit_central_pixel_flats=np.array(signal_deficit_central_pixel_flats)
 
 median_def_spot_signal=np.median(signal_deficit_central_pixel_spots, axis=0)
-#median_def_flat_signal=np.median(signal_deficit_central_pixel_flats, axis=0)
+median_def_flat_signal=np.median(signal_deficit_central_pixel_flats, axis=0)
 
 NORM_flats_big_vec=np.array(NORM_flats_big_vec)
 NORM_spots_big_vec=np.array(NORM_spots_big_vec)
+
+#signal_flat_SUPER_VEC=np.array(signal_flat_SUPER_VEC)
+#signal_spot_SUPER_VEC=np.array(signal_spot_SUPER_VEC)
+
+#median_flat_signal = np.median(signal_flat_SUPER_VEC, axis=0)
+#median_spot_signal = np.median(signal_spot_SUPER_VEC, axis=0)
+
 
 
 np.savetxt (out_dir+"jay_NORM_spots.dat", NORM_spots_big_vec)
@@ -2438,7 +2739,7 @@ np.savetxt (out_dir+"jay_diff_fluxes_center_pixel.dat", diff_fluxes_vec)
 #np.savetxt (out_dir+"jay_median_flux_spots_center_pixel.dat", median_spot_signal)
 
 #np.savetxt (out_dir+"jay_median_deficit_flux_flats_center_pixel.dat", median_def_flat_signal)
-np.savetxt (out_dir+"jay_median_deficit_flux_spots_center_pixel.dat", median_def_spot_signal)
+#np.savetxt (out_dir+"jay_median_deficit_flux_spots_center_pixel.dat", median_def_spot_signal)
 
 
 ##### Residual of NL model for each pixel. Print a separate file for each pixel. 
@@ -2463,6 +2764,16 @@ for key in dict_residual:
     np.savetxt (out_dir+"jay_median_flux_spots_pixel_%g.dat" %pixel_number, vec)
 
     print "vec 3: ", vec
+
+
+    ## Add residual absolute 
+    vec=np.array(np.array(dict_residual_absolute[key]))
+    pixel_number=get_pixel_index[key]
+    np.savetxt (out_dir+"jay_residual_absolute_pixel_%g_flat.dat" %pixel_number, vec)
+
+    print "vec 4: ", vec
+
+
 
 
 ################################## 12. Calculate the mean of the size of the postage stamp in each frame; then calculate relative size to first frame ################################
@@ -2534,8 +2845,12 @@ if stamp_string == 'five':
     dict={'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[],'9':[],'10':[],\
     '11':[],'12':[],'13':[],'14':[],'15':[],'16':[],'17':[],'18':[],'19':[],'20':[],'21':[],'22':[],\
     '23':[],'24':[],'25':[]}
+    dict2={'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[],'9':[],'10':[],\
+    '11':[],'12':[],'13':[],'14':[],'15':[],'16':[],'17':[],'18':[],'19':[],'20':[],'21':[],'22':[],\
+    '23':[],'24':[],'25':[]}    
 elif stamp_string == 'three':
     dict={'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[],'9':[]}
+    dict2={'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[],'9':[]}
     st_vec=np.zeros(9)
 else:
     print "error!!! " 
@@ -2567,6 +2882,10 @@ for j in range(-stamp_end,1+stamp_end):
         #stack_ramps_and_plot (ax1, ramps_dict_fbin2, 'b-o', counter_pixel, label='')#label="%g e$^-$ $\leq$ $Z$ $<$ %g e$^-$"%(cut2,cut3))
         #stack_ramps_and_plot (ax1, ramps_dict_fbin3, 'g-o', counter_pixel, label='')#label="%g e$^-$ $\leq$ $Z$ $<$ %g e$^-$"%(cut3, cut4), title='%g'%st_vec[counter_pixel-1])
         dict["%g"%counter_pixel]=(y,y_err, x)
+        
+        x2, y2,y_err2=stack_ramps_and_plot (ax1, ramps_dict_all_jay_mean_signal, ramps_dict_all_jay_no_norm, 'k-o', counter_pixel, label="All", title='Second metric (Jay) no norm')
+        dict2["%g"%counter_pixel]=(y2,y_err2, x2)
+
         counter_pixel+=1
 #plt.suptitle("Jay's metric")
 #plt.tight_layout()
@@ -2575,7 +2894,18 @@ pp.savefig(fig)
 #sys.exit()
 
 
-print dict
+#print ramps_dict_all_jay[(1,1)][0]
+#print " "
+#print " "
+#print ramps_dict_all_jay_no_norm[(1,1)][0]
+
+#sys.exit()
+
+
+#print dict
+#print dict2
+
+#sys.exit()
 
 f=open(out_dir+'jay_metric.dat', 'w')
 for key in dict:
@@ -2587,6 +2917,17 @@ for key in dict:
     f.write(line)
 f.close()
 
+
+## No norm 
+f=open(out_dir+'jay_metric_no_norm.dat', 'w')
+for key in dict2:
+    line="%s "%key
+    a=np.concatenate((dict2[key][0], dict2[key][1], dict2[key][2]))
+    for b in a:
+        line+="%g "%b
+    line+="\n"
+    f.write(line)
+f.close()
 
 
 
