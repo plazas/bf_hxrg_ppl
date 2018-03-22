@@ -1090,7 +1090,7 @@ nchan=int(Config.get('params', 'NChan')) #32
 colsperchan=ysize/nchan
 nref= int(Config.get('params', 'NRef'))   #3
 
-stamp_string=Config.get('params', 'StampString') 
+stamp_string=three #Config.get('params', 'StampString')
 
 ### dir sub_dark? start_flat start_spot region number (if corner)
 
@@ -1145,8 +1145,8 @@ else:
     examine_ramps=True
 
 
-start_sample_flats=int(Config.get('params', 'StartSampleFlats'))
-start_sample_spots=int(Config.get('params', 'StartSampleSpots'))
+start_sample_flats=int(Config.get('params', 'StartFrameFlats'))
+start_sample_spots=int(Config.get('params', 'StartFrameSpots'))
 
 mask_file=Config.get('params', 'BadPixelMask')
 MASK=pf.open(mask_file)[0].data
@@ -1156,7 +1156,7 @@ npix_total=MASK.shape[0]*MASK.shape[1]
 centroid_threshold=float(Config.get('params', 'CentroidThreshold'))
 nl_threshold_f, nl_threshold_s= 3.0, 3.0
 
-x_cut, y_cut = 10, 10
+x_cut, y_cut = int(Config.get('params', 'XBorderCut')), int(Config.get('params', 'YBorderCut'))
 centroid_type = Config.get('params', 'CentroidType')
 region=9999
 
@@ -1292,9 +1292,9 @@ allFlats, infoFlats = badger.getRampsFromFiles((files_flats))
 files_flats=0
 
 
-discard_spots_temp=Config.get('params', 'DiscardSpots')
-discard_flats_temp=Config.get('params', 'DiscardFlats')
-discard_darks_temp=Config.get('params', 'DiscardDarks')
+discard_spots_temp=Config.get('params', 'DiscardRampsSpots')
+discard_flats_temp=Config.get('params', 'DiscardRampsFlats')
+discard_darks_temp=Config.get('params', 'DiscardRampsDarks')
 
 
 discard_spots=[]
@@ -1612,14 +1612,15 @@ ax=fig.add_subplot(121)
 ax=fig.add_subplot(121)
 ax.imshow(GLOBAL_FLATS[-1], cmap=cm.seismic, origin="lower", interpolation='nearest')#, vmin=mean_science - mean_science/factor, vmax=mean_science + mean_science/factor)
 ax.set_title("100 stacked images: Flats, last frame")
-PCM=ax.get_children()[2] #get the mappable, the 1st and the 2nd are the x and y axes
-plt.colorbar(PCM, ax=ax)
+#PCM=ax.get_children()[2] #get the mappable, the 1st and the 2nd are the x and y axes
+#plt.colorbar(PCM, ax=ax)
 
 ax=fig.add_subplot(122)
 ax.imshow(GLOBAL_SPOTS[-1], cmap=cm.seismic, origin="lower", interpolation='nearest')#, vmin=mean_science - mean_science/factor, vmax=mean_science + mean_science/factor)
 ax.set_title("100 stacked images: Spots, last frame")
-PCM=ax.get_children()[2] #get the mappable, the 1st and the 2nd are the x and y axes
-plt.colorbar(PCM, ax=ax)
+#PCM=ax.get_children()[2] #get the mappable, the 1st and the 2nd are the x and y axes
+#plt.colorbar(PCM, ax=ax)
+#plt.colorbar()
 
 plt.tight_layout()
 pp.savefig()
@@ -1957,7 +1958,7 @@ SUM_STAMP_2D_DARKS=[]
 
 ## Big loop here
 
-end=-1
+end=100
 for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filtered[:end], flux_filtered[:end], central_filtered[:end]) ):
     if xc < x_cut or yc < y_cut: 
         print "skipping: ", xc, yc
