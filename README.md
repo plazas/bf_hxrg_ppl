@@ -39,8 +39,6 @@ will be placed in this directory, whose path is given by `OutDirRoot`.
 
 - `NRef`: Number of reference pixels to use (e.g., 3).
 
-- `StampString`: three
-
 - `CorrectNL`: Should the code correct for detector nonlinearity? Boolean (`True` or `False`).
 
 - `PolyOrder`: Order of the polynomial to correct for nonlinearity. Should be `2` or `3`.
@@ -66,9 +64,16 @@ Set to `-1` if no ramps should be discarded.
 
 - `StartFrameSpots`: Number of starting frame for ramps of spots and darks. If you don't wish to discard any frame, set it to `0`. If you want to discard the first frame, set it to `1`.
 
+- `XBorderCut`: Do not use spots whose `x` coordinate is within this number of pixels rom the detector border. E.g., (`50`)
+
+- `YBorderCut`: Do not use spots whose `y` coordinate is within this number of pixels rom the detector border. E.g., (`50`)
+
+- `EndSpotVector`: When doing the big loop over all spots in the stacked image, this value is the final number of spots that should be considered. E.g., `-1` represents that the last entry of the spots vector is `-1`, i.e., the whole vector. 
+
 - `BadPixelMask`: Bad pixel mask by Dr. Eric Huff. E.g., `/projector/aplazas/master-euclid-mask.fits`. Will be use by `SExtractor` (in the parameter fie) when finding the sources.  It will also be used to discard the postage stamps of the spots that have at least 1 pixel whose value is different from `0` in the mask. 
 
 - `CentroidType`: Either `center` or `corner`.  Chose sources close to the center of the pixel or to the corner.
+
 - `CentroidThreshold`: Distance, in pixels, from center or corner of a pixel. E.g., `0.1`.
 
 - `RegionCorner`: If `CentroidType' is set to `corner', this value should be set to `1`, `2`, `3`, or `4`, according to the quadrant of the `3x3` postage stamp that you wish to stack.  
