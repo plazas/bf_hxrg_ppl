@@ -1,18 +1,95 @@
 # bf_hxrg_ppl
 Code to measure the BF effect in HXRG detectors using data from JPL's Precision Projector Laboratory at Caltech. This code was used to produce the results in Plazas et al. 2018 (arXiv:1712.06642)
 
-
 ## Main code:  bf_ppl.py 
 
 ### Usage of the code: 
 
-% python bf\_ppl.py <name\_of\_output\_directory>
+% python bf\_ppl.py 
 
-The code is run in ‘lucius’. 
+The code is run in `lucius`, and it reads parameters a configuration filed named `config_bf_ppl.ini` 
+
+### Files that should be in the same directory where "bf\_ppl.py" is:
+
+- `badger.py`
+- `sextractor_engine.py`
+- `pixel_rejector.py`
+- `moments.py`
+- `sigma_clip.py`
+- `config_bf_ppl.ini`
+
+### Parameters
+The parameters for running the code should be specified in a configuration file named `config_bf_ppl.py`. Their names and 
+meanings are as follows: 
+
+- `OutDirRoot`: Output directory path. 
+
+- `OutDirName`: Name of output directory. Will be created if it does not exists already. All the output files (see below)
+will be placed in this directory, whose path is given by `OutDirRoot`.
+
+- `OutPDFName`: Name of the output PDF file where diagnostic and preliminary plots will be produced. 
+
+- `SigmaCut`: Cut for sigma-clipping when averaging ramps over spots.
+
+- `Gain`: Mean gain of the detector, in electrons per ADU.
+
+- `YSize`: Size of the (squared) detector, in pixels (e.g., 2048)
+
+- `NChan`: Number of channels in the detector.
+
+- `NRef`: Number of reference pixels to use (e.g., 3).
+
+- `StampString`: three
+
+- `CorrectNL`: Should the code correct for detector nonlinearity? Boolean (`True` or `False`).
+
+- `PolyOrder`: Order of the polynomial to correct for nonlinearity. Should be `2` or `3`.
+
+- `CorrectIPC`: Should the code correct for IPC? The constant kernel is denoted by `K` in the code. Boolean (`True` or `False`).
+
+- `SubtractDark`: Should the code subtract dark images? Boolean (`True` or `False`)
+
+- `Simulation`: Should the code use simulated ramps (`True`) or PPL data (`False`)?
+
+- `ExamineRamps`: Should the code look for outlier ramps (`True`) or PPL data (`False`). The results will be plotted in the first three pages of `OutPDFName`.
+
+- `DiscardRampsSpots`: List of spot ramps number, separated by a white space, that should be discarded. E.g.: `4 20 22`. 
+Set to `-1` if no ramps should be discarded. 
+
+- `DiscardRampsDarks`: List of dark ramps number, separated by a white space, that should be discarded. E.g.: `1 3 6`. 
+Set to `-1` if no ramps should be discarded. 
+
+- `DiscardRampsFlats`:  List of flats ramps number, separated by a white space, that should be discarded. E.g.: `-1`. 
+Set to `-1` if no ramps should be discarded. 
+
+- `StartFrameFlats`: Number of starting frame for ramps of flats. If you don't wish to discard any frame, set it to `0`. If you want to discard the first frame, set it to `1`. 
+
+- `StartFrameSpots`: Number of starting frame for ramps of spots and darks. If you don't wish to discard any frame, set it to `0`. If you want to discard the first frame, set it to `1`.
+
+- `BadPixelMask`: Bad pixel mask by Dr. Eric Huff. E.g., `/projector/aplazas/master-euclid-mask.fits`. Will be use by `SExtractor` (in the parameter fie) when finding the sources.  It will also be used to discard the postage stamps of the spots that have at least 1 pixel whose value is different from `0` in the mask. 
+
+- `CentroidType`: Either `center` or `corner`.  Chose sources close to the center of the pixel or to the corner.
+- `CentroidThreshold`: Distance, in pixels, from center or corner of a pixel. E.g., `0.1`.
+
+- `RegionCorner`: If `CentroidType' is set to `corner', this value should be set to `1`, `2`, `3`, or `4`, according to the quadrant of the `3x3` postage stamp that you wish to stack.  
+
+- `SextractorPath`: Path to `Sextractor` executable. E.g., `/usr/local/optical/sextractor/bin/sex`.
+
+- `ListDarksPPL`: `/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-000[0-9]*.fits`.
+
+- `ListSpotsPPL`: `/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-02[3-9][0-9]*.fits`
+
+- `ListFlatsPPL`: `/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-00[3-9][0-9]*.fits` 
+
+- `ListDarksSimulation`: `/projector/aplazas/TESTJULY21_90_V9_OFFSET00_LOW_NOISE_NO_NL/*BACKGROUND*_00[1-2]*.fits`
+
+- `ListSpotsSimulation`: `/projector/aplazas/TESTJULY21_90_V9_OFFSET00_LOW_NOISE_NO_NL/*OBJECT*.fits`
+
+- `ListFlatsSimulation`: `/projector/aplazas/TESTJULY21_90_V9_OFFSET00_LOW_NOISE_NO_NL/*FLAT*.fits`
 
 ### Output: 
 
-The following ASCII files will be created in the directory “out\_dir/<name\_of\_output\_directory>” (not an exhaustive list). Currently, “out_dir” is set to “/projector/aplazas/” in lucius. Use the code "plot_fn.py" to read and plot them. The figures for the paper come mainly from the PDF file produced after running that code ("plot_fn.py"). 
+The following ASCII files will be created in the directory `out\_dir/<name\_of\_output\_directory>` (not an exhaustive list). Currently, “out_dir” is set to “/projector/aplazas/” in lucius. Use the code "plot_fn.py" to read and plot them. The figures for the paper come mainly from the PDF file produced after running that code ("plot_fn.py"). 
 
 
 jay\_relative\_size.dat:  Data for Fig. 8
@@ -150,7 +227,7 @@ Loop over sources:
 
 -Discard if it has at least one bad pixel. 
 -For each source, loop over pixels in postage stamp 
-- Use function “fit\_pixel\_ramp” to fit a quadratic function to the ramps of the spots, flats, and darks. 
+- Use function `fit_pixel_ramp` to fit a quadratic function to the ramps of the spots, flats, and darks. 
 - After fitting the ramps, calculate model residuals. Figure 2 in paper. 
 - Correct stamps of darks, spots, and flats for NL by using the quadratic formula. Subtract darks after correcting for NL. 
 - Calculate size of corrected stamp, save in a vector. 
@@ -159,7 +236,7 @@ Loop over sources:
 	-Turn electrons into electrons per time for each difference: 
             rates\_vec\_jay=delta\_sig/delta\_time
             - In the process, calculate  F_i - <F_i> to eventually produce Figure 6. 
-            - Calculate difference in rate with respect to first frame, and then normalize to produce the f_N metric: “jay metric”. The vector is  s\_vec\_jay/=NORM
+            - Calculate difference in rate with respect to first frame, and then normalize to produce the f_N metric: `jay metric`. The vector is  s\_vec\_jay/=NORM
             
              - For the central pixel, calculate the coefficient B : 
                            new_B = (m/fc)\*(NORM/(val0\*delta\_t/1000)) 
