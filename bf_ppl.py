@@ -1706,6 +1706,8 @@ else:
 
 
 
+
+
 for (xc, yc) in zip (x_int, y_int):
     if xc > 2043 or xc < 5: continue
     if yc > 2000 or yc < 5: continue
@@ -1958,7 +1960,7 @@ SUM_STAMP_2D_DARKS=[]
 
 ## Big loop here
 
-end=100
+end=int(Config.get('params', 'EndSpotVector'))
 for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filtered[:end], flux_filtered[:end], central_filtered[:end]) ):
     if xc < x_cut or yc < y_cut: 
         print "skipping: ", xc, yc
@@ -1966,8 +1968,6 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
     #if (xc,yc) in [(1251,10),(1259,10)]:
     #    continue
  
-
-
 
     stamp=GLOBAL_SPOTS[-1][yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
     stamp_mask = MASK [yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
