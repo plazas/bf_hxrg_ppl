@@ -18,7 +18,7 @@ The code is run in `lucius`, and it reads parameters a configuration filed named
 - `sigma_clip.py` 
 - `config_bf_ppl.ini`
 
-### Parameters in `config_bf_ppl.ini`
+### Parameters in `config_bf_ppl.ini` for `bf_ppl.py`.
 The parameters for running the code should be specified in a configuration file named `config_bf_ppl.ini`. Their names and 
 meanings are as follows: 
 
@@ -124,7 +124,8 @@ The following ASCII files will be created by the code and placed in the director
 
 - `OutPDFName`: PDF file with some preliminary and diagnostic plots. The plots for the paper are produced from the flies described above and by running `plot_fn.py`.  
 
-- Note: To produce Fig. 7, run the code 4 times as described in part 9 below. The data will be in "jay\_metric.dat" files under directories with different names. 
+- Note: To produce Fig. 7, run the code 4 times as described in part 9 below, setting the parameters `CentroidType` to `corner` and 
+`CornerRegion` to `1`, `2`, `3`, or `4`, respectively. Don't forget to change the `OutDirName` every time. 
 
 
 ### Parts of the code (from top to bottom): 
@@ -145,7 +146,7 @@ Make sure that the spots and darks have the same exposure time (same number of s
 
 Here the code uses `badger.getRampsFromFiles`  so make sure you can import `badger` or that you at least have the required files in your directory. 
 
-Time along the code is in miliseconds, because it is read from the files produced by the PPL, which record time in thse units. Thus, sometimes we need to multiply by 1000 (c.f., `plot_fn.py`) to report time in seconds (as is done in the paper). 
+Time along the code is in miliseconds, because it is read from the files produced by the PPL, which record time in tehse units. Thus, sometimes we need to multiply by 1000 (c.f., `plot_fn.py`) to report time in seconds (as is done in the paper). 
 
 #### 5. Stack data 
 
@@ -160,23 +161,21 @@ If the number of files is less than 40, take the median. If it is larger, split 
 
 #### 8. Run SEXtractor on last frame of median ramp GLOBAL_SPOTS if not running simulations 
 
-Convert back to ADU theist frame, use  `daofind\_sex\_detection.config`  as configuration file for SEXtractor. 
+Convert back to ADU the last frame, use  `daofind_sex_detection.config`  as configuration file for `SExtractor`. 
 
-Output catalog will be placed in: 
+The output catalog will be placed in: 
 
-`out=out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'`
+- `out=out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'`
 
-If you are using simulations,  the code does not run SExtractor and uses a catalog of positions created by the user when making the simulations. 
+If you are using simulations,  the code does not run `SExtractor` and uses a catalog of positions created by the user when making the simulations. 
 
 
 #### 9. Centroid calculation from last frame of spots ramp, in electrons.
 
-Subtract the bias (B_spots), and then, within the loop, calculate the unweighted centroid after subtracting the local background. . If centroid type is ‘corner’, select only those sources in a given Cartesian quadrant (Region 1 to 4). I changed this by hand and ran the code 4 times to get the data to produce Figure 7 of the paper. 
+Subtract the bias (`B_spots`), and then, within the loop, calculate the unweighted centroid after subtracting the local background. . If `CentroidType` is `corner`, select only those sources in a given Cartesian quadrant (Region 1 to 4). I changed this by hand and ran the code 4 times to get the data to produce Fig. 7 of the paper. 
 
 
 #### 10. Big loop over sources to correct for NL (from flat fields), and calculate f_N
-
-to_plot: ID of sources to plot in the final PDF  
 
 Loop over sources: 
 
@@ -184,52 +183,53 @@ Loop over sources:
 
 - For each source, loop over pixels in postage stamp 
 
-- Use function `fit_pixel_ramp` to fit a quadratic function to the ramps of the spots, flats, and darks. 
+- Use function `fit_pixel_ramp` to fit a quadratic or cubic function to the ramps of the spots, flats, and darks. 
 
-- After fitting the ramps, calculate model residuals. Figure 2 in paper. 
+- After fitting the ramps, calculate model residuals. Fig. 2 in paper. 
 
-- Correct stamps of darks, spots, and flats for NL by using the quadratic formula. Subtract darks after correcting for NL. 
+- Correct stamps of darks, spots, and flats for NL by using the quadratic formula or `np.root` for the cubic case. Subtract darks after correcting for NL. 
 
 - Calculate size of corrected stamp, save in a vector. 
 
 - Loop over each pixel the corrected spot stamp: 
 
-  - Calculate signal and time difference between consecutive frames 
+- Calculate signal and time difference between consecutive frames 
   
-  - Turn electrons into electrons per time for each difference: `rates_vec_jay=delta_sig/delta_time`.
+- Turn electrons into electrons per time for each difference: `rates_vec_jay=delta_sig/delta_time`.
   
-            - In the process, calculate  `F_i - <F_i>` to eventually produce Figure 6. 
+- In the process, calculate  `F_i - <F_i>` to eventually produce Figure 6. 
 	    
-            - Calculate difference in rate with respect to first frame, and then normalize to produce the f_N metric: `jay metric`. The vector is  `s_vec_jay/=NORM`.
+- Calculate difference in rate with respect to first frame, and then normalize to produce the `f_N` metric: `jay_metric`. The vector is  `s_vec_jay/=NORM`.
 	    
-            - For the central pixel, calculate the coefficient B : 
-	    
-                 - `new_B = (m/fc)\*(NORM/(val0\*delta\_t/1000))`
+- For the central pixel, calculate the coefficient B : 
+    - `new_B` = (m/fc)\*(NORM/(val0\*delta\_t/1000))
 		 
-                 - The parameters used are derived from the fit:  `m, m_err=linear_fit_m (samples, s_vec_jay, err)`
+    - The parameters used are derived from the fit:  `m, m_err=linear_fit_m (samples, s_vec_jay, err)`
 		 
-                 - Save that `new_B` in a vector; use those numbers to produce histogram of B in paper. 
+    - Save that `new_B` in a vector; use those numbers to produce histogram of B in paper. 
 		 
-                 - Note that `new_B` and `b = 2*(c1)*(c2)/fc` are consistent with each other. 
+     - Note that `new_B` and `b = 2*(c1)*(c2)/fc` are consistent with each other. 
 
 
 #### 11. After big loop, save files with output data 
 
 #### 12. Calculate the mean of the size of the postage stamp in each frame; then calculate relative size to first frame
 
-Figure 8 of paper
+Fig. 8 of paper
 
 #### 13. Plots: 
-These won’t be the final plots in the paper. Those are produced by another code (plot_fn.py), using the output ASCII files listed above. 
+These won’t be the final plots in the paper. Those are produced by another code (`plot_fn.py`), using the output ASCII files listed above. 
 
 ## Code: plot_fn.py
 
-After running "bf_ppl.py" for different configurations (e.g., simulations, PPL data center, PPL data corner in each Cartesian quadrant), a set of ASCII files is produced. Then "plot_fn.py" reads those files---which are in the directory ASCII\_FILES\_TO\_PLOT---to produce most of the plots that ended up in the paper. 
+After running `bf_ppl.py` for different configurations (e.g., simulations, PPL data center, PPL data corner in each Cartesian quadrant), a set of ASCII files is produced. Then `plot_fn.py` reads those files to produce most of the plots that ended up in the paper. 
+
+### Configuration file `config_plot_fn.ini` for `plot_fn.py`
 
 ## Code: sim.py 
 
-Uses GalSim to produce a simulated 2k by 2k scene with a grid of point sources. The number of spots depends on the size of their individual postage stamps; this can be chaged at the beginning of the code. As input, the code reads the PPL PSF model file provided by Chaz (`chazPSF_lamda1_cd3_f11_pix1_noboxcar.fits`). The FITS image will be saved in a direcotry called "output". You can change this in the variable "file\_name". To change the placement of the sources, modify the variable offset as neede (e.g., offset=(ud(), ud()) for random offsets or offset=(0.0, 0.0) for sources perfectly located at the center of the pixel). The simulated scene will be used by the code "hxrg\_simulator.py" to produce simulated ramps. 
+Uses GalSim to produce a simulated 2k by 2k scene with a grid of point sources. The number of spots depends on the size of their individual postage stamps; this can be chaged at the beginning of the code. As input, the code reads the PPL PSF model file provided by Chaz (`chazPSF_lamda1_cd3_f11_pix1_noboxcar.fits`). The FITS image will be saved in a direcotry called "output". You can change this in the variable `file_name`. To change the placement of the sources, modify the variable offset as neede (e.g., offset=(ud(), ud()) for random offsets or offset=(0.0, 0.0) for sources perfectly located at the center of the pixel). The simulated scene will be used by the code `hxrg_simulator.py` to produce simulated ramps. 
 
 ## Code: hxrg_simulator.py
-Originally written by Chaz Shapiro. This version has small modifications to add BF (from the Power Law model in GalSim) and IPC. Uses as input the image created with "sim.py".
+Originally written by Chaz Shapiro. This version has small modifications to add BF (from the Power Law model in GalSim) and IPC. Uses as input the image created with `sim.py`.
 
