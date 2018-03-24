@@ -222,9 +222,25 @@ These won’t be the final plots in the paper. Those are produced by another cod
 
 ## Code: plot_fn.py
 
-After running `bf_ppl.py` for different configurations (e.g., simulations, PPL data center, PPL data corner in each Cartesian quadrant), a set of ASCII files is produced. Then `plot_fn.py` reads those files to produce most of the plots that ended up in the paper. 
+After running `bf_ppl.py` for different configurations (e.g., simulations, PPL data center, PPL data corner in each Cartesian quadrant), a set of ASCII files is produced in the outpur directory that was especified in the configuration file. Then `plot_fn.py` reads those files to produce most of the plots that ended up in the paper. In addition, `plot_fn.py` reads files from simulations and 
 
 ### Configuration file `config_plot_fn.ini` for `plot_fn.py`
+
+- `DoSigmaClipping`: Boolean. Should the code do sigma clipping? 
+- `SigmaClippingCut`: Integer. Number of sigmas if doing sigma-clipping. 
+- `FramTimePPL`: Float. `FRAMTIME` keyword in the header of the PPL files. E.g., `0.837632`.
+- `NFramesPPL`: Integer. 5
+- `NFramesSim`: 4
+- `NFramesCornerPPL`: 4
+- `PPLDataDirCenter`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/H_FILTER_CENTER_PPL/MAR21_H_BAND_F11_CUBIC`
+- `PPLDataDirCornerR1`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION1_xc_lt_0_yc_lt_0`
+- `PPLDataDirCornerR2`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION2_xc_gt_0_yc_lt_0`
+- `PPLDataDirCornerR3`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION3_xc_lt_0_yc_gt_0`
+- `PPLDataDirCornerR4`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION3_xc_lt_0_yc_gt_0`
+- `SimDirCenterNLCorrected`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CENTER_SIM_NL_CORRECTED`
+- `SimDirCenterNLNotCorrected`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CENTER_SIM_NL_NOT_CORRECTED`
+- `SimDirCenterNothing`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/SIMS_NOTHING`
+- `SimDirCenterBHistogram`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CENTER_SIM_BF_90RAMPS_V7`
 
 ## Code: sim.py 
 
