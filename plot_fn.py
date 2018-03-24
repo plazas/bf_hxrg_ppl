@@ -16,8 +16,6 @@ import sys
 ## Each file has 4 columns: linear flux spots | % residual spots |  linear flux flats | % residual flats
 
 
-sc=True   #sigma clipping?
-
 ### DATA
 pp=PdfPages("fn.pdf")
 print "Output PDF: fn.pdf "
@@ -138,30 +136,65 @@ import ConfigParser
 Config = ConfigParser.ConfigParser()
 Config.read("config_plot_fn.ini")
 
-Config.get('params', 'OutDirRoot')
+sc_temp=Config.get('params', 'DoSigmaClipping')#sigma clipping?
+
+if sc_temp == "True":
+    sc=True
+elif sc_temp == "False":
+    sc=False
+else:
+    print "Enter a valid parameter for 'DoSigmaClipping'"
+    sys.exit()
+    
+sigma_cut=float(Config.get('params', 'SigmaClippingCut'))
+delta_t=float(Config.get('params', 'FramTimePPL'))    #0.837632
+
+ppl_dir_center=Config.get('params', 'PPLDataDirCenter')
+#root+"CENTER_PPL/"
+nframes = int(Config.get('params', 'NFramesPPL'))
+nframes_sim = int(Config.get('params', 'NFramesSim'))
+nframes_corner = int(Config.get('params', 'NFramesCornerPPL'))
+
+sim_dir_center_NL_corr =  Config.get('params', 'SimDirCenterNLCorrected')
+#root+"CENTER_SIM_NL_CORRECTED/
+sim_dir_center_not_NL_corr =  Config.get('params', 'SimDirCenterNLNotCorrected')
+#root+"CENTER_SIM_NL_NOT_CORRECTED
+sim_dir_center_nothing =  Config.get('params', 'SimDirCenterNothing')
+#root+"SIMS_NOTHING
+DirSimB =  Config.get('params', 'SimDirCenterBHistogram')
+#root+"CENTER_SIM_BF_90RAMPS_V7
+
+ppl_dir_corner_r1=Config.get('params', 'PPLDataDirCornerR1')
+#root+"H_FILTER_CENTER_PPL/FEB15_FILMSTRIP_V2_DARK_SUB_YES_ZERO_FRAME_YES_REGION1/"
+ppl_dir_corner_r2=Config.get('params', 'PPLDataDirCornerR2')
+ppl_dir_corner_r3=Config.get('params', 'PPLDataDirCornerR3')
+ppl_dir_corner_r4=Config.get('params', 'PPLDataDirCornerR4')
+
+
 
 
 # PARAMS
-root="/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/"
-temp_dir="MAR14_Y_BAND_CUBIC/"  #"FEB26_QUAD_DARK_SUBTRACTED_ZERO_FRAME_YES/"
-nframes=4
-nframes_corner=6
+#root="/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/"
+#temp_dir="MAR21_H_BAND_F11_CUBIC/"  #"FEB26_QUAD_DARK_SUBTRACTED_ZERO_FRAME_YES/"
+#nframes=5
+#nframes_corner=6
 
 
 
 
-ppl_center_dict=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/" + temp_dir + "jay_metric.dat", flux=True, nframes=nframes)
+ppl_center_dict=read_3x3_into_dict (ppl_dir_center + "/jay_metric.dat", flux=True, nframes=nframes)
+# 
 #ppl_center_dict=read_3x3_into_dict (root+"CENTER_PPL/" + "jay_metric.dat", flux=True, nframes=nframes)
 
-
 #ppl_corner_dict=read_3x3_into_dict (root+"CORNER_PPL/jay_metric_corner.dat" )
-sim_center_dict=read_3x3_into_dict (root+"CENTER_SIM_NL_CORRECTED/jay_metric_oct21.dat" )
-sim_center_nc_dict=read_3x3_into_dict (root+"CENTER_SIM_NL_NOT_CORRECTED/jay_metric_sim_nl_not_corr.dat" )
-sim_nothing=read_3x3_into_dict (root+"SIMS_NOTHING/jay_metric.dat")
-flats_120v100=read_3x3_into_dict (root+"FLATS_120_VS_FLATS_100/jay_metric_oct21.dat")
+sim_center_dict=read_3x3_into_dict (sim_dir_center_NL_corr + "/jay_metric_oct21.dat", nframes=nframes_sim )
+
+sim_center_nc_dict=read_3x3_into_dict (sim_dir_center_not_NL_corr+ "/jay_metric_sim_nl_not_corr.dat", nframes=nframes_sim )
+
+sim_nothing=read_3x3_into_dict (sim_dir_center_nothing + "/jay_metric.dat", nframes=nframes_sim)
+
+#flats_120v100=read_3x3_into_dict (root+"FLATS_120_VS_FLATS_100/jay_metric_oct21.dat")
 #sim_center_bf=read_3x3_into_dict(root+"CENTER_SIM_BF_90RAMPS_V7/jay_metric.dat")
-
-
 
 #print ppl_center_dict
 #print ppl_corner_dict
@@ -169,7 +202,7 @@ flats_120v100=read_3x3_into_dict (root+"FLATS_120_VS_FLATS_100/jay_metric_oct21.
 #samples=range(1, len(ppl_center_dict['1'][0]) + 1)
 
 samples= range(1, len(ppl_center_dict['2'][0]) + 1)   # THIS IS ACTUALLY MEAN SIGNAL PER FRAME ( (sample + 1 + sample) / 2) in ELECTRONS
-print ppl_center_dict['2'][2], ppl_center_dict['5'][2]
+#print ppl_center_dict['2'][2], ppl_center_dict['5'][2]
 #sys.exit()
 
 simulations_flux={'1':[402.957, 677.249, 955.99, 1240.43], '2': [1825.97 ,3078.59 ,4363.04, 5672.92], '3':[402.915, 677.282, 957.607, 1241.39], \
@@ -363,7 +396,10 @@ pp.savefig()
 
 
 #data_ppl_center=np.genfromtxt(root+"CENTER_PPL/jay_relative_size_oct25.dat")
-data_ppl_center=np.genfromtxt(root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_relative_size.dat")
+#data_ppl_center=np.genfromtxt(root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_relative_size.dat")
+data_ppl_center=np.genfromtxt(ppl_dir_center+"/jay_relative_size.dat")
+
+
 
 #data_sim_nl= np.genfromtxt(root+"CENTER_SIM_NL_CORRECTED/relative_size_oct21.dat")
 #data_sim_nl_nc= np.genfromtxt(root+"CENTER_SIM_NL_NOT_CORRECTED/relative_size_sim_NL_not_corr.dat")
@@ -412,7 +448,7 @@ pp.savefig()
 # fc,b, c1, c2, m, m_err, m/fc, new_B
 
 #data_B=np.genfromtxt (root+"CENTER_PPL/jay_B.dat")
-data_B=np.genfromtxt (root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_B.dat")
+data_B=np.genfromtxt (ppl_dir_center+"/jay_B.dat")
 #data_B=np.genfromtxt(root+"jay_B_FINAL_DEC4.dat")
 
 
@@ -427,10 +463,8 @@ b2=data_B[:,7]   #### CHANGED to new B, not
 #c2_flats=np.genfromtxt (root+"H_FILTER_CENTER_PPL/jay_c2_flats.dat")
 #c2_spots=np.genfromtxt (root+"H_FILTER_CENTER_PPL/jay_c2_spots.dat")
 
-c2_flats=np.genfromtxt (root+"CENTER_PPL/jay_c2_flats.dat")
-c2_spots=np.genfromtxt (root+"CENTER_PPL/jay_c2_spots.dat")
-
-
+c2_flats=np.genfromtxt (ppl_dir_center +"/jay_c2_flats.dat")
+c2_spots=np.genfromtxt (ppl_dir_center +"/jay_c2_spots.dat")
 
 
 vec=[ (fc, 'Fc', 'green'), (b1,"B, method 1", 'blue'), (c1, "c1", 'yellow'), (c2, "c2", 'magenta'), (m, "m", 'cyan'), (b2,"B (1/e$^-$)", 'red'), (c2_flats,"$C_2$ flats", 'red'), (c2_spots,"$C_2$ spots", 'blue')  ]
@@ -445,7 +479,7 @@ import esutil as eu
 
 if sc:
 
-  sigma_cut=3
+
   mean_b, sigma_b, indices = eu.stat.sigma_clip(b,niter=10, nsig=sigma_cut, get_indices=True, verbose=True)
 
   b=b[indices]
@@ -547,8 +581,8 @@ mpl.rc('axes.formatter', limits=[-4,4])
 mpl.rc('axes.formatter', limits=[-4,4])
 mpl.rcParams['xtick.labelsize']= '10.0'
 
-
-data_B_sim=np.genfromtxt(root+"CENTER_SIM_BF_90RAMPS_V7/"+"jay_B.dat")
+#root+"CENTER_SIM_BF_90RAMPS_V7/
+data_B_sim=np.genfromtxt(DirSimB+"/jay_B.dat")
 b2_sim=data_B_sim[:,7]   # new B, 7, not 6
 
 if sc:
@@ -656,8 +690,8 @@ mean_y_dict={'1': [], '2': [], '3': [], \
 
 fig=fig=plt.figure()
 for i in range(1,10):
-    median_flux_flats=np.genfromtxt(root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_median_flux_flats_pixel_%g.dat"%i)
-    data_residuals_flats=np.genfromtxt (root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_residual_pixel_%g_flat.dat" %i)
+    median_flux_flats=np.genfromtxt(ppl_dir_center+"/jay_median_flux_flats_pixel_%g.dat"%i)
+    data_residuals_flats=np.genfromtxt (ppl_dir_center+"/jay_residual_pixel_%g_flat.dat" %i)
 
     #median_flux_flats=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_flux_flats_pixel_%g.dat"%i)
     #data_residuals_flats=np.genfromtxt (root+"CENTER_PPL/"+"jay_residual_pixel_%g_flat.dat" %i)
@@ -703,8 +737,8 @@ mean_y_dict_absolute={'1': [], '2': [], '3': [], \
 
 fig=fig=plt.figure()
 for i in range(1,10):
-    median_flux_flats_absolute=np.genfromtxt(root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_median_flux_flats_pixel_%g.dat"%i)
-    data_residuals_flats_absolute=np.genfromtxt (root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_residual_absolute_pixel_%g_flat.dat" %i)
+    median_flux_flats_absolute=np.genfromtxt(ppl_dir_center+"/jay_median_flux_flats_pixel_%g.dat"%i)
+    data_residuals_flats_absolute=np.genfromtxt (ppl_dir_center+"/jay_residual_absolute_pixel_%g_flat.dat" %i)
 
     #median_flux_flats=np.genfromtxt(root+"CENTER_PPL/"+"jay_median_flux_flats_pixel_%g.dat"%i)
     #data_residuals_flats=np.genfromtxt (root+"CENTER_PPL/"+"jay_residual_pixel_%g_flat.dat" %i)
@@ -757,22 +791,21 @@ pp.savefig()
 #                            '7': 844.803, '8': 1109.37, '9': 845.586}
 
 
-simulated_mean_spot_fluxes_data=np.genfromtxt (root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_median_spot_fluxes.dat")
+simulated_mean_spot_fluxes_data=np.genfromtxt (ppl_dir_center+"/jay_median_spot_fluxes.dat")
 simulated_mean_spot_fluxes={'1': simulated_mean_spot_fluxes_data[0], '2': simulated_mean_spot_fluxes_data[1], '3':simulated_mean_spot_fluxes_data[2], \
                             '4':simulated_mean_spot_fluxes_data[3], '5':simulated_mean_spot_fluxes_data[4], '6':simulated_mean_spot_fluxes_data[5], \
                             '7': simulated_mean_spot_fluxes_data[6], '8': simulated_mean_spot_fluxes_data[7], '9': simulated_mean_spot_fluxes_data[8]}
 #delta_t=3.350528
 #delta_t=3.0
-delta_t=0.837632
 
-    
-    
+
+
 ## Dictionary of fluxes for average ramps ine ach pixel of spot:
 prop = fm.FontProperties(size=7)
 
 
 #ppl_center_dict_NO_NORM=read_3x3_into_dict (root+"PPL_DATA_NO_NORM/jay_metric.dat", flux=True)
-ppl_center_dict_NO_NORM=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_metric_no_NORM.dat", flux=True, nframes=nframes)
+ppl_center_dict_NO_NORM=read_3x3_into_dict (ppl_dir_center+"/jay_metric_no_NORM.dat", flux=True, nframes=nframes)
 
 
 
@@ -962,7 +995,7 @@ pp.savefig()
 ### PAGE 9
 
 #surr=read_surrounding_into_dict(root+"CENTER_PPL/"+"jay_metric_surrounding.dat")
-surr=read_surrounding_into_dict(root+"H_FILTER_CENTER_PPL/"+temp_dir+"jay_metric_surrounding.dat", nframes=nframes)
+surr=read_surrounding_into_dict(ppl_dir_center+"/jay_metric_surrounding.dat", nframes=nframes)
 
 fig=plt.figure()
 samples=range(1, nframes+1)
@@ -997,10 +1030,10 @@ mpl.rc('axes.formatter', limits=[-5,5])
 #data_corner4=read_3x3_into_dict (root+"CORNER_PPL/SECOND_RUN/REGION4_xc_gt_0_yc_gt_0/"+"jay_metric.dat", flux=True)   #1,2,4,5
 
 
-data_corner1=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/FEB15_FILMSTRIP_V2_DARK_SUB_YES_ZERO_FRAME_YES_REGION1/"+"jay_metric.dat", flux=True, nframes=nframes_corner)
-data_corner2=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/FEB15_FILMSTRIP_V2_DARK_SUB_YES_ZERO_FRAME_YES_REGION2/"+"jay_metric.dat", flux=True, nframes=nframes_corner)
-data_corner3=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/FEB15_FILMSTRIP_V2_DARK_SUB_YES_ZERO_FRAME_YES_REGION3/"+"jay_metric.dat", flux=True, nframes=nframes_corner)
-data_corner4=read_3x3_into_dict (root+"H_FILTER_CENTER_PPL/FEB15_FILMSTRIP_V2_DARK_SUB_YES_ZERO_FRAME_YES_REGION4/"+"jay_metric.dat", flux=True, nframes=nframes_corner)
+data_corner1=read_3x3_into_dict (ppl_dir_corner_r1+"/jay_metric.dat", flux=True, nframes=nframes_corner)
+data_corner2=read_3x3_into_dict (ppl_dir_corner_r2+"/jay_metric.dat", flux=True, nframes=nframes_corner)
+data_corner3=read_3x3_into_dict (ppl_dir_corner_r3+"/jay_metric.dat", flux=True, nframes=nframes_corner)
+data_corner4=read_3x3_into_dict (ppl_dir_corner_r4+"/jay_metric.dat", flux=True, nframes=nframes_corner)
 
 
 
