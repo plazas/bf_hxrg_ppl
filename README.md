@@ -11,11 +11,11 @@ The code is run in `lucius`, and it reads parameters a configuration filed named
 
 ### Files that should be in the same directory where "bf\_ppl.py" is:
 
-- `badger.py`
+- `badger.py`: Slightly modified version. In particular, the lines `fileStr['FRAMTIME'][i] = thisHdr['FRAMTIME']` and `fileStr['LODFILE'][i] = thisHdr['LODFILE']` where added in the function ` organize_ramps`. 
 - `sextractor_engine.py`
 - `pixel_rejector.py`
 - `moments.py`
-- `sigma_clip.py` 
+- `sigma_clip.py` : From Dr. E. Sheldon
 - `config_bf_ppl.ini`
 
 ### Parameters in `config_bf_ppl.ini` for `bf_ppl.py`.
@@ -222,24 +222,40 @@ These won’t be the final plots in the paper. Those are produced by another cod
 
 ## Code: plot_fn.py
 
-After running `bf_ppl.py` for different configurations (e.g., simulations, PPL data center, PPL data corner in each Cartesian quadrant), a set of ASCII files is produced in the outpur directory that was especified in the configuration file. Then `plot_fn.py` reads those files to produce most of the plots that ended up in the paper. In addition, `plot_fn.py` reads files from simulations and 
+After running `bf_ppl.py` for different configurations (e.g., simulations, PPL data center, PPL data corner in each Cartesian quadrant), a set of ASCII files is produced in the outpur directory that was especified in the configuration file. Then `plot_fn.py` reads those files to produce most of the plots that ended up in the paper. In addition, `plot_fn.py` reads files from simulations. 
 
 ### Configuration file `config_plot_fn.ini` for `plot_fn.py`
 
 - `DoSigmaClipping`: Boolean. Should the code do sigma clipping? 
+
 - `SigmaClippingCut`: Integer. Number of sigmas if doing sigma-clipping. 
+
 - `FramTimePPL`: Float. `FRAMTIME` keyword in the header of the PPL files. E.g., `0.837632`.
-- `NFramesPPL`: Integer. 5
-- `NFramesSim`: 4
-- `NFramesCornerPPL`: 4
-- `PPLDataDirCenter`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/H_FILTER_CENTER_PPL/MAR21_H_BAND_F11_CUBIC`
-- `PPLDataDirCornerR1`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION1_xc_lt_0_yc_lt_0`
-- `PPLDataDirCornerR2`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION2_xc_gt_0_yc_lt_0`
-- `PPLDataDirCornerR3`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION3_xc_lt_0_yc_gt_0`
-- `PPLDataDirCornerR4`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION3_xc_lt_0_yc_gt_0`
+
+- `NFramesPPL`: Integer. Number of final frames in the `f_n` plot. You can use `OutPDFName` to figure it out. It is not the initial number of frames in the raw data/simulated data, becausei the process we subtract consecutive frames (and sometimes we discard the first frame). 
+
+- `NFramesSim`: Integer. Same as `NFramesPPL`, but for simulations. 
+
+- `NFramesCornerPPL`: Integer. Same as `NFramesPPL`, but for the 4 cases where the centroid of the spots are close to the corner of a pixel.  
+
+- `PPLDataDirCenter`: Location of `OutDirName` from `bf_ppl.py`, after running the code with `CentroidType` set to `center`. E.g.,  `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/H_FILTER_CENTER_PPL/MAR21_H_BAND_F11_CUBIC`
+
+- `PPLDataDirCornerR1`: Location of `OutDirName` from `bf_ppl.py`, after running the code with `CentroidType` set to `corner` and `RegionCorner` to `1`. E.g., `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION1_xc_lt_0_yc_lt_0`
+
+- `PPLDataDirCornerR2`: Location of `OutDirName` from `bf_ppl.py`, after running the code with `CentroidType` set to `corner` and `RegionCorner` to `2`. E.g.,`/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION2_xc_gt_0_yc_lt_0`
+
+- `PPLDataDirCornerR3`: Location of `OutDirName` from `bf_ppl.py`, after running the code with `CentroidType` set to `corner` and `RegionCorner` to `3`. E.g.,`/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION3_xc_lt_0_yc_gt_0`
+
+- `PPLDataDirCornerR4`: Location of `OutDirName` from `bf_ppl.py`, after running the code with `CentroidType` set to `corner` and `RegionCorner` to `4`. E.g.,`/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CORNER_PPL/SECOND_RUN/REGION3_xc_lt_0_yc_gt_0`
+
+The following parameters specify the location of the directories with files from simulations, used to produced Fig. 5 and the green histogram in Fig. 9. 
+
 - `SimDirCenterNLCorrected`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CENTER_SIM_NL_CORRECTED`
+
 - `SimDirCenterNLNotCorrected`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CENTER_SIM_NL_NOT_CORRECTED`
+
 - `SimDirCenterNothing`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/SIMS_NOTHING`
+
 - `SimDirCenterBHistogram`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CENTER_SIM_BF_90RAMPS_V7`
 
 ## Code: sim.py 
@@ -247,5 +263,5 @@ After running `bf_ppl.py` for different configurations (e.g., simulations, PPL d
 Uses GalSim to produce a simulated 2k by 2k scene with a grid of point sources. The number of spots depends on the size of their individual postage stamps; this can be chaged at the beginning of the code. As input, the code reads the PPL PSF model file provided by Chaz (`chazPSF_lamda1_cd3_f11_pix1_noboxcar.fits`). The FITS image will be saved in a direcotry called "output". You can change this in the variable `file_name`. To change the placement of the sources, modify the variable offset as neede (e.g., offset=(ud(), ud()) for random offsets or offset=(0.0, 0.0) for sources perfectly located at the center of the pixel). The simulated scene will be used by the code `hxrg_simulator.py` to produce simulated ramps. 
 
 ## Code: hxrg_simulator.py
-Originally written by Chaz Shapiro. This version has small modifications to add BF (from the Power Law model in GalSim) and IPC. Uses as input the image created with `sim.py`.
+Originally written by Dr. Chaz Shapiro. This version has small modifications to add BF (from the Power Law model in GalSim) and IPC. Uses as input the image created with `sim.py`.
 
