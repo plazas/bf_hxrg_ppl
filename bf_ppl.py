@@ -1090,7 +1090,7 @@ nchan=int(Config.get('params', 'NChan')) #32
 colsperchan=ysize/nchan
 nref= int(Config.get('params', 'NRef'))   #3
 
-stamp_string=three #Config.get('params', 'StampString')
+stamp_string='three' #Config.get('params', 'StampString')
 
 ### dir sub_dark? start_flat start_spot region number (if corner)
 
@@ -1169,7 +1169,7 @@ else:
     print "Enter a vaild centroid type: center or corner."
     sys.exit(1)
 
-SEXTRACTOR=Config.get('params', 'SextractorPath')
+SEXTRACTOR=Config.get('params', 'SExtractorPath')
 
 
 #old data, 1 micron filter (Y?), used for the paper 
@@ -1232,6 +1232,16 @@ SEXTRACTOR=Config.get('params', 'SextractorPath')
 #list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-03-06/FLATS/BF_Hband_f8_cal01[3-8]*.fits"
 #list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-03-07/SPOTS/FIRST_SET/BF_Hband_mask2_f8_nocube00[3-9]*.fits"
 
+
+
+##### MORE H-BAND data, this time at f-11, with old mask from h-band filter. No sphere blocking the flats like in the previous one. 
+#Spots for BF:  BF_Hband_f11_nocube 0-99
+#Flats for BF:  BF_Hband_f11_nocube_horiz-flat  0-99
+#FLATS: 2018-03-16
+#SPOTS: 2018-03-15
+#ListDarksPPL: /projector/aplazas/data/WFIRST/2018-03-06/DARKS/BF_dark00[3-4]*.fits
+#ListSpotsPPL: /projector/aplazas/data/WFIRST/2018-03-15/SPOTS/BF_Hband_f11_nocube00[4-9]*.fits
+#ListFlatsPPL: /projector/aplazas/data/WFIRST/2018-03-16/FLATS/BF_Hband_f11_nocube_horiz-flat00[4-9]*.fits
 
 
 list_of_darks_ppl=Config.get('params', 'ListDarksPPL')
@@ -1526,10 +1536,23 @@ print "shapes_darks[0]: ", shapes_darks[0]
 print "shapes_flats[0]: ", shapes_spots[0]
 
 
+####### FOR THE TIME VECTOR; if LODFILE is not V2, start at 0 (old data). If it is V2, start at FRAMTIME
 
-#time_darks=np.linspace(infoDarks['FRAMTIME'][0], infoDarks['sample'][0]*infoDarks['FRAMTIME'][0], infoDarks['sample'][0]+1)
+lodfile=infoFlats['LODFILE'][0]  #Assuming the LODFILE is the same for the flats darks, and spots. 
+if lodfile == '/home/user/dsp/lod/tim.20170215bufreg.lod': 
+    start_time_flats = 0.0 
+    start_time_darks = 0.0
+elif lodfile = '/home/user/dsp/lod//tim.euclid.a.20170426.v2.lod':
+    start_time_flats = infoFlats['FRAMTIME'][0]
+    start_time_darks = infoDarks['FRAMTIME'][0]  # time_spots is the same as time_darks
+else:
+    print "Please provide files with a valid 'LODFILE' keyword in their headers."
+    sys.exit()
 
-time_darks=np.linspace(0.0, infoDarks['sample'][0]*infoDarks['FRAMTIME'][0], infoDarks['sample'][0]+1)
+
+time_darks=np.linspace(start_time_darks, infoDarks['sample'][0]*infoDarks['FRAMTIME'][0], infoDarks['sample'][0]+1)
+
+#time_darks=np.linspace(0.0, infoDarks['sample'][0]*infoDarks['FRAMTIME'][0], infoDarks['sample'][0]+1)
 time_darks=time_darks[start_sample_spots:end_sample_spots]
 
 
@@ -1551,7 +1574,7 @@ time_darks=time_darks[start_sample_spots:end_sample_spots]
 
 #time_flats=np.linspace(infoFlats['FRAMTIME'][0], infoFlats['sample'][0]*infoFlats['FRAMTIME'][0], infoFlats['sample'][0]+1)
 
-time_flats=np.linspace(0.0, infoFlats['sample'][0]*infoFlats['FRAMTIME'][0], infoFlats['sample'][0]+1)
+time_flats=np.linspace(start_time_flats, infoFlats['sample'][0]*infoFlats['FRAMTIME'][0], infoFlats['sample'][0]+1)
 time_flats=time_flats[start_sample_flats:end_sample_flats]
 
 
