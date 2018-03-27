@@ -258,10 +258,19 @@ The following parameters specify the location of the directories with files from
 
 - `SimDirCenterBHistogram`: `/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/CENTER_SIM_BF_90RAMPS_V7`
 
+
+- Note: If you use different simulations, you need to especify the fluxes per pixel for a simulated spot. This is given by the following dictionary in the code: 
+
+`simulations_flux={'1':[402.957, 677.249, 955.99, 1240.43], '2': [1825.97 ,3078.59 ,4363.04, 5672.92], '3':[402.915, 677.282, 957.607, 1241.39], \
+'4': [1827.36, 3079.58, 4361.75, 5672.8], '5':[28285.2, 46977, 65505.4, 83830] , '6': [1832.58 ,3088.91, 4374.23 ,5687.13], \
+'7': [402.496, 676.444, 954.201, 1238.62], '8': [1826.36, 3079.46, 4365.73, 5677.67],  '9': [403.374 ,677.778, 956.593, 1240.58]}`
+
+
 ## Code: sim.py 
 
-Uses GalSim to produce a simulated 2k by 2k scene with a grid of point sources. The number of spots depends on the size of their individual postage stamps; this can be chaged at the beginning of the code. As input, the code reads the PPL PSF model file provided by Chaz (`chazPSF_lamda1_cd3_f11_pix1_noboxcar.fits`). The FITS image will be saved in a direcotry called "output". You can change this in the variable `file_name`. To change the placement of the sources, modify the variable offset as neede (e.g., offset=(ud(), ud()) for random offsets or offset=(0.0, 0.0) for sources perfectly located at the center of the pixel). The simulated scene will be used by the code `hxrg_simulator.py` to produce simulated ramps. 
+Uses GalSim to produce a simulated 2k by 2k scene with a grid of point sources. The number of spots depends on the size of their individual postage stamps; this can be chaged at the beginning of the code. As input, the code reads the PPL PSF model file provided by Chaz (`chazPSF_lamda1_cd3_f11_pix1_noboxcar.fits`). The FITS image will be saved in a direcotry called `output`. You can change this in the variable `file_name`. To change the placement of the sources, modify the variable offset as needed (e.g., offset=(ud(), ud()) for random offsets, or offset=(0.0, 0.0) for sources perfectly located at the center of the pixel). The simulated scene will be used by the code `hxrg_simulator.py` to produce simulated ramps. 
 
 ## Code: hxrg_simulator.py
+
 Originally written by Dr. Chaz Shapiro. This version has small modifications to add BF (from the Power Law model in GalSim) and IPC. Uses as input the image created with `sim.py`.
 
