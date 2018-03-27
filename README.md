@@ -11,7 +11,7 @@ The code is run in `lucius`, and it reads parameters a configuration filed named
 
 ### Files that should be in the same directory where "bf\_ppl.py" is:
 
-- `badger.py`: Slightly modified version. In particular, the lines `fileStr['FRAMTIME'][i] = thisHdr['FRAMTIME']` and `fileStr['LODFILE'][i] = thisHdr['LODFILE']` where added in the function ` organize_ramps`. 
+- `badger.py`: Slightly modified version. In particular, the lines `fileStr['FRAMTIME'][i] = thisHdr['FRAMTIME']` and `fileStr['LODFILE'][i] = thisHdr['LODFILE']` were added in the function ` organize_ramps`. 
 - `sextractor_engine.py`
 - `pixel_rejector.py`
 - `moments.py`
