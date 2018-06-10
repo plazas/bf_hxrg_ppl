@@ -187,7 +187,7 @@ Loop over sources:
 
 - After fitting the ramps, calculate model residuals. Fig. 2 in paper. 
 
-- Correct stamps of darks, spots, and flats for NL by using the quadratic formula or `np.root` for the cubic case. Subtract darks after correcting for NL. 
+- Correct stamps of darks, spots, and flats for NL by using `np.root` for the quadratic and cubic cases. Subtract darks after correcting for NL. 
 
 - Calculate size of corrected stamp, save in a vector. 
 
@@ -232,7 +232,7 @@ After running `bf_ppl.py` for different configurations (e.g., simulations, PPL d
 
 - `FramTimePPL`: Float. `FRAMTIME` keyword in the header of the PPL files. E.g., `0.837632`.
 
-- `NFramesPPL`: Integer. Number of final frames in the `f_n` plot. You can use `OutPDFName` to figure it out. It is not the initial number of frames in the raw data/simulated data, becausei the process we subtract consecutive frames (and sometimes we discard the first frame). 
+- `NFramesPPL`: Integer. Number of final frames in the `f_n` plot. You can use `OutPDFName` to figure it out. It is not the initial number of frames in the raw data/simulated data, because the process we subtract consecutive frames (and sometimes we discard the first frame). 
 
 - `NFramesSim`: Integer. Same as `NFramesPPL`, but for simulations. 
 
@@ -268,7 +268,7 @@ The following parameters specify the location of the directories with files from
 
 ## Code: sim.py 
 
-Uses GalSim to produce a simulated 2k by 2k scene with a grid of point sources. The number of spots depends on the size of their individual postage stamps; this can be chaged at the beginning of the code. As input, the code reads the PPL PSF model file provided by Chaz (`chazPSF_lamda1_cd3_f11_pix1_noboxcar.fits`). The FITS image will be saved in a direcotry called `output`. You can change this in the variable `file_name`. To change the placement of the sources, modify the variable offset as needed (e.g., offset=(ud(), ud()) for random offsets, or offset=(0.0, 0.0) for sources perfectly located at the center of the pixel). The simulated scene will be used by the code `hxrg_simulator.py` to produce simulated ramps. 
+Uses GalSim to produce a simulated 2k by 2k scene with a grid of point sources. The number of spots depends on the size of their individual postage stamps; this can be chaged at the beginning of the code. As input, the code reads the PPL PSF model file provided by Chaz (`chazPSF_lamda1_cd3_f11_pix1_noboxcar.fits`). The FITS image will be saved in a directory called `output`. You can change this in the variable `file_name`. To change the placement of the sources, modify the variable offset as needed (e.g., offset=(ud(), ud()) for random offsets, or offset=(0.0, 0.0) for sources perfectly located at the center of the pixel). The simulated scene will be used by the code `hxrg_simulator.py` to produce simulated ramps. 
 
 ## Code: hxrg_simulator.py
 
