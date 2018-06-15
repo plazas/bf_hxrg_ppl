@@ -30,7 +30,7 @@ import ConfigParser
 
 #from hope import jit 
 
-
+import pdb
 ################################## 1. PLOTTING PARAMETERS ##################################
 
 plt.minorticks_on()
@@ -1539,10 +1539,11 @@ print "shapes_flats[0]: ", shapes_spots[0]
 ####### FOR THE TIME VECTOR; if LODFILE is not V2, start at 0 (old data). If it is V2, start at FRAMTIME
 
 lodfile=infoFlats['LODFILE'][0]  #Assuming the LODFILE is the same for the flats darks, and spots. 
-if lodfile == '/home/user/dsp/lod/tim.20170215bufreg.lod': 
+
+if lodfile == '/home/user/dsp/lod/tim.20170215bufreg.lod' or lodfile == '/home/user/dsp/lod//tim.20170215bufreg.lod': 
     start_time_flats = 0.0 
     start_time_darks = 0.0
-elif lodfile = '/home/user/dsp/lod//tim.euclid.a.20170426.v2.lod':
+elif lodfile == '/home/user/dsp/lod/tim.euclid.a.20170426.v2.lod' or lodfile == '/home/user/dsp/lod//tim.euclid.a.20170426.v2.lod':
     start_time_flats = infoFlats['FRAMTIME'][0]
     start_time_darks = infoDarks['FRAMTIME'][0]  # time_spots is the same as time_darks
 else:
@@ -1980,6 +1981,10 @@ dict_median_flux_spots={(0,0):[],(0,1):[],(0,2):[],(1,0):[],(1,1):[],(1,2):[],(2
 SUM_STAMP_2D=[]
 SUM_STAMP_2D_FLATS=[]
 SUM_STAMP_2D_DARKS=[]
+
+SUM_STAMP_3D=[]
+SUM_STAMP_3D_FLATS=[]
+SUM_STAMP_3D_DARKS=[]
 
 ## Big loop here
 
@@ -2637,7 +2642,17 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
     SUM_STAMP_2D_FLATS.append(GLOBAL_FLATS_STAMPS_CORR[-1])   
     SUM_STAMP_2D_DARKS.append(GLOBAL_DARKS_STAMPS_CORR[-1])
 
+    SUM_STAMP_3D.append(GLOBAL_SPOTS_STAMPS_CORR)
+    SUM_STAMP_3D_FLATS.append(GLOBAL_FLATS_STAMPS_CORR)   
+    SUM_STAMP_3D_DARKS.append(GLOBAL_DARKS_STAMPS_CORR)
+
     super_counter+=1
+
+np.save(out_dir+'/stamps_spot.npy',np.array(SUM_STAMP_3D))
+np.save(out_dir+'/stamps_flat.npy',np.array(SUM_STAMP_3D_FLATS))
+np.save(out_dir+'/stamps_dark.npy',np.array(SUM_STAMP_3D_DARKS))
+
+pdb.set_trace()
 
 SUM_STAMP_2D=np.array(SUM_STAMP_2D)
 MEDIAN_STAMP=np.nanmedian(SUM_STAMP_2D, axis=0)
