@@ -2279,17 +2279,19 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
         print " "
         print "c0_mat_darks: ", c0_mat_darks
         print " "
-        corr_stamp_spots = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_spots-stamp)) )
-        corr_stamp_darks = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_darks-dark_stamp)) )
-        print "corr_stamp_darks method 1: ", corr_stamp_darks
-        print " "
+        
+	#Quadratic formula correction. Gives same results as np.root when order == 2 (see lines below). 
+	#corr_stamp_spots = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_spots-stamp)) )
+        #corr_stamp_darks = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_darks-dark_stamp)) )
+        #print "corr_stamp_darks method 1: ", corr_stamp_darks
+        #print " "
        
         
-        """
+        
         corr_stamp_spots=1.0*np.ones_like(stamp)
         corr_stamp_darks=1.0*np.ones_like(stamp)
         
-        
+        #"""
         if polynomial_order == 3: 
             print "c3_mat_flats", c3_mat_flats
             for (j,i),s_temp in np.ndenumerate(stamp):
@@ -2314,7 +2316,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
 
         print "corr_stamp_darks method 2: ", corr_stamp_darks
         #sys.exit()
-        """
+        #"""
 
  
         if correct_NL == False:
