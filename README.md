@@ -7,7 +7,7 @@ Code to measure the BF effect in HXRG detectors using data from JPL's Precision 
 
 % python bf\_ppl.py 
 
-The code is run in `lucius`, and it reads parameters a configuration filed named `config_bf_ppl.ini`. The code analyzes PPL data (`SOLO` or `FILMTRIP` mode) and simulated data (darks, flats, and spots) created by using a combination of the codes `sim.py` and `hxrg_simulator.py` (see bellow).  
+The code is run in `lucius`, and it reads parameters a configuration filed named `config_bf_ppl.ini`. The code analyzes PPL data (`SOLO` or `FILMTRIP` mode) and simulated data (darks, flats, and spots) created by using a combination of the codes `sim.py` and `hxrg_simulator.py` (see below).  
 
 ### Files that should be in the same directory where "bf\_ppl.py" is:
 
