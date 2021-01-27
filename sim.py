@@ -26,7 +26,7 @@ def main(argv):
 
  file_name = os.path.join('output','h2rg_sim_offset_norm_0_point_1.fits')
 
- print "hola"
+ print("hola")
 
  nobj=n_tiles*n_tiles
  rng = galsim.BaseDeviate(random_seed+nobj)
@@ -41,7 +41,7 @@ def main(argv):
  psf = galsim.InterpolatedImage(psf_im, scale = pixel_scale, flux = 1.)
 
 
- print "hola 2"
+ print("hola 2")
  ix_list = []
  iy_list = []
  for ix in range(n_tiles):
@@ -61,8 +61,8 @@ def main(argv):
     
 
     sub_psf_image = psf_image[b]
-    print " "
-    print "Center in big image: ", b.center().x, b.center().y
+    print(" ")
+    print("Center in big image: ", b.center().x, b.center().y)
     #line="%g %g \n" %(b.center().x, b.center().y)
     #f.write (line)
     #ud = galsim.UniformDeviate(rng)
@@ -79,11 +79,11 @@ def main(argv):
         #offset=(0.5,0.5)
     #    ud = galsim.UniformDeviate(rng)
     #    offset=(ud(), ud())
-    print "ix, iy, dx, dy, norm: ", ix, iy, offset, np.sqrt(x**2 + y**2)
+    print("ix, iy, dx, dy, norm: ", ix, iy, offset, np.sqrt(x**2 + y**2))
     final_x, final_y = b.center().x + offset[0], b.center().y + offset[1]
-    print "Center in image + offset: ", final_x, final_y
+    print("Center in image + offset: ", final_x, final_y)
     final_x_int, final_y_int = np.int (np.rint(final_x)), np.int (np.rint(final_y))
-    print "Center in integer form: ", final_x_int, final_y_int
+    print("Center in integer form: ", final_x_int, final_y_int)
     line="%g %g \n" %(final_x_int, final_y_int)
     f.write (line)
 

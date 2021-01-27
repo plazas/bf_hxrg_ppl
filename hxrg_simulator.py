@@ -124,7 +124,7 @@ def main(argv):
  ,'COMMENT':''
  }
  header = pf.Header()
- for k in header_dict.keys(): header[k]=header_dict[k]
+ for k in list(header_dict.keys()): header[k]=header_dict[k]
  
 
  def writeFITS(filename, data ,**kwargs):
@@ -152,9 +152,9 @@ def main(argv):
 
  #bias=0.2*bias
  
- print np.mean(exposed_img)
+ print(np.mean(exposed_img))
  
- print np.mean (bias)
+ print(np.mean (bias))
  #sys.exit(1)
  
  
@@ -219,17 +219,17 @@ def main(argv):
     #if imgtype=='OBJECT': pdb.set_trace()
 
 
-    print "exposed_img: ", np.mean (exposed_img)
-    print "flux: ", flux
+    print("exposed_img: ", np.mean (exposed_img))
+    print("flux: ", flux)
 
     #bias=0.2*(2**16-1-bias)  #temp
     #bias=2**16-1-bias
     #print  "bias: ", np.mean(bias)
-    print  "charge: ", np.mean(charge_template)
+    print("charge: ", np.mean(charge_template))
     charge_template += dark
-    print np.mean(charge_template), np.mean(dark)
+    print(np.mean(charge_template), np.mean(dark))
     #charge_template += bias  #temp
-    print np.mean(charge_template), charge_template.shape
+    print(np.mean(charge_template), charge_template.shape)
     #sys.exit()
     charge_template *= frametime * reference_pixels
 
@@ -287,13 +287,13 @@ def main(argv):
         #    print "%.8f" %a[ytest, xtest]        
 
         ####Bias
-        print "bias: ", (2**16-1-bias[ytest,xtest])*2.7
+        print("bias: ", (2**16-1-bias[ytest,xtest])*2.7)
  
 
-        print "Before NL: "
+        print("Before NL: ")
         for sample in cum_charge:
-            print "%.7f" %sample[ytest,xtest]
-        print " "
+            print("%.7f" %sample[ytest,xtest])
+        print(" ")
 
         cum_charge = cum_charge + NL_betas*cum_charge**2
         #print "after applying NL: "
@@ -318,7 +318,7 @@ def main(argv):
         #print cum_charge.shape, K.shape
         temp_cum_charge=[]
         for sample in cum_charge:
-            print np.mean(sample)
+            print(np.mean(sample))
             
             #temp = sample
             # IPC
@@ -360,9 +360,9 @@ def main(argv):
         #sys.exit() 
         #if imgtype=='OBJECT': pdb.set_trace()
     
-        print "Before quantization: "
+        print("Before quantization: ")
         for sample in cum_charge:
-	    print "%.7f" %sample[ytest,xtest]    
+	    print("%.7f" %sample[ytest,xtest])    
 
         #Cutoff image at 0 ADU and convert to int
 	#Really there is also quantization at the photon and dark current level, but ignoring that for now
@@ -370,10 +370,10 @@ def main(argv):
         cum_charge = np.clip(cum_charge ,0 ,2**16-1).astype('uint16')
         
 
-        print " "
-        print "After quantization: "
+        print(" ")
+        print("After quantization: ")
         for sample in cum_charge:
-            print "%.7f, %.7f, %.7f" %(sample[ytest,xtest], 2**16-1-sample[ytest,xtest], (2**16-1-sample[ytest,xtest])*2.7 )
+            print("%.7f, %.7f, %.7f" %(sample[ytest,xtest], 2**16-1-sample[ytest,xtest], (2**16-1-sample[ytest,xtest])*2.7 ))
 
         #cum_charge_no_nl = np.clip (cum_charge_no_nl, 0, 2**16-1).astype('uint16')        
 
@@ -400,7 +400,7 @@ def main(argv):
             header['RAMPID'] = i
             outname = outformat % (header['TYPE'],imagen,i)
             writeFITS(outname ,cum_charge[i] ,clobber=True ,header=header)
-            print 'Saved ', outname
+            print('Saved ', outname)
 
 
 if __name__ == "__main__":

@@ -145,7 +145,7 @@ class SextractorEngine():
 
     def run(self, msg=None):
         args = [self.path, self.config['IMAGE']]
-        for key in self.config.keys():
+        for key in list(self.config.keys()):
             if key=='IMAGE':
                 continue
             else:

@@ -26,7 +26,7 @@ import moments
 
 import gc
 
-import ConfigParser
+import configparser
 
 #from hope import jit 
 
@@ -120,7 +120,7 @@ dict_3x3={(0,0):(-1,1), (0,1):(0,1), (0,2): (1,1), \
 def get_centroid_3x3 (stamp):
     s1,s2=stamp.shape
     if not s1 == 3 and s2 == 3: 
-	print "Error: stamp must be 3X3"
+        print ("Error: stamp must be 3X3")
         sys.exit()
     xcent,ycent=0,0
     sum_stamp=np.sum(stamp)
@@ -164,7 +164,7 @@ dict_5x5={(0,0):(-2,2), (0,1):(-1,2), (0,2):(0,2), (0,3):(1,2), (0,4):(2,2), \
 def get_centroid_5x5 (stamp):
     s1,s2=stamp.shape
     if not s1 == 5 and s2 == 5:
-        print "Error: stamp must be 5X5"
+        print("Error: stamp must be 5X5")
         sys.exit()
     xcent,ycent=0,0
     sum_stamp=np.sum(stamp)
@@ -178,11 +178,11 @@ def get_centroid_5x5 (stamp):
 #@jit
 def fit_pixel_ramp (ramp='', time='', i=0, j=0, order=2):
      if not len (ramp) == len (time):
-         print "inside function ;fit_pixel_ramp': len(ramp) not equal to len (time)."
-         print "len (ramp) == len (time): ", len (ramp), len (time)
-         print "ramp: ", ramp, ramp.shape
+         print("inside function ;fit_pixel_ramp': len(ramp) not equal to len (time).")
+         print("len (ramp) == len (time): ", len (ramp), len (time))
+         print("ramp: ", ramp, ramp.shape)
          sys.exit()
-         print "time: ", time
+         print("time: ", time)
          sys.exit()   
  
      flag=False
@@ -191,7 +191,7 @@ def fit_pixel_ramp (ramp='', time='', i=0, j=0, order=2):
      elif order == 3:
          pinit=pinit_cubic
      else:
-         print "Wrong order within fit_pixel_ramp function "
+         print("Wrong order within fit_pixel_ramp function ")
          sys.exit()
 
      time_vec, signal_vec, signal_vec_err=[],[],[]
@@ -218,23 +218,23 @@ def fit_pixel_ramp (ramp='', time='', i=0, j=0, order=2):
 
      #a=np.array(a)
      #b=np.array(b)
-     print "time_vec, signal_vec: ", time_vec, signal_vec
+     print("time_vec, signal_vec: ", time_vec, signal_vec)
      #print "diff time, diff signal, ratio: ", a, b, b/a
      if signal_vec[0] < 0: 
-	print "Inside fit_pixel_ramp, negative signal: ", signal_vec
+	print("Inside fit_pixel_ramp, negative signal: ", signal_vec)
         signal_vec=np.fabs(signal_vec)
 
      if np.isnan(signal_vec).any() or np.isinf(signal_vec_err).any():
         flag=True
-        print "FLAG TRUE 1"
+        print("FLAG TRUE 1")
         return np.zeros(order+1), np.zeros((order+1,order+1)), 0., flag, signal_vec
      else:
         pfinal, covar, chi2_red = get_final_parameters_first_fit (x=time_vec, y=signal_vec, y_err=signal_vec_err, order=order)
         if np.isinf(pfinal).any(): #or np.isinf(covar).any():
             flag=True
-            print "FLAG TRUE 2"
-            print "pfinal, covar: ", pfinal, covar
-            print "time_vec, y=signal_vec, y_err=signal_vec_err", time_vec, signal_vec, signal_vec_err
+            print("FLAG TRUE 2")
+            print("pfinal, covar: ", pfinal, covar)
+            print("time_vec, y=signal_vec, y_err=signal_vec_err", time_vec, signal_vec, signal_vec_err)
             sys.exit()
             return np.zeros(order+1), np.zeros((order+1,order+1)) , 0., flag, signal_vec
         else:
@@ -243,7 +243,7 @@ def fit_pixel_ramp (ramp='', time='', i=0, j=0, order=2):
             #p0_err=np.sqrt(np.diag(covar))[0]
             #p1_err=np.sqrt(np.diag(covar))[1]
             #p2_err=np.sqrt(np.diag(covar))[2]
-            print "Todo bien in fit pixel ramp: pfinal, covar, chi2_red, flag: ", pfinal, covar, chi2_red, flag
+            print("Todo bien in fit pixel ramp: pfinal, covar, chi2_red, flag: ", pfinal, covar, chi2_red, flag)
             return pfinal, covar, chi2_red, flag, signal_vec
 
 #@jit
@@ -251,14 +251,14 @@ def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=
     #c2=-7.76e-7 
     c3=-1e-12
     if not len (ramp) == len (time):
-         print "inside function 'correct_and_fit_pixel_ramp': len(ramp) not equal to len (time)."
-         print "len (ramp), len (time): ", len (ramp), len (time)
+         print("inside function 'correct_and_fit_pixel_ramp': len(ramp) not equal to len (time).")
+         print("len (ramp), len (time): ", len (ramp), len (time))
          sys.exit()
     
     flag=False
     time_vec, signal_vec, signal_vec_err, sum_stamp=[],[],[],[]
     if not len(time)==len(ramp):
-        print "len(time)==len(ramp) not satisfied"
+        print("len(time)==len(ramp) not satisfied")
         sys.exit(1)
     a,b, delta_sum_stamp, counter=[],[],[],0
     for t, sample_array, sample_dark in zip(time,ramp, dark_ramp):
@@ -271,8 +271,8 @@ def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=
         
         #s=c0_spot + c1_spot*t
         s=(1/(2*c2))*(-1+np.sqrt(1-4*c2*(c0_spot-s_temp)))         ### Apply the correction here!
-        print "DISCRIMINANTE: "
-        print 18*c3*c2*(c0_spot-s_temp) - 4*c3**3*(c0_spot-s_temp)+c2**2-4*c3-27*c3**2*(c0_spot-s_temp)**2
+        print("DISCRIMINANTE: ")
+        print(18*c3*c2*(c0_spot-s_temp) - 4*c3**3*(c0_spot-s_temp)+c2**2-4*c3-27*c3**2*(c0_spot-s_temp)**2)
         #sys.exit()
 
         #print "signal: %g, corrected signal: %g" %(s_temp, s)
@@ -288,16 +288,16 @@ def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=
             s=s_temp
             d=d_temp
             
-        print " "
-        print "c0_spot, c0_dark, c1_spot, c1_dark, c2 (from flat) ", c0_spot, c0_dark, c1_spot, c1_dark, c2
-        print "signal: %g, corrected_signal: %g " %(s_temp, s)
-        print "dark: %g, corrected_dark: %g " %(d_temp, d) 
+        print(" ")
+        print("c0_spot, c0_dark, c1_spot, c1_dark, c2 (from flat) ", c0_spot, c0_dark, c1_spot, c1_dark, c2)
+        print("signal: %g, corrected_signal: %g " %(s_temp, s))
+        print("dark: %g, corrected_dark: %g " %(d_temp, d)) 
 
         ## Subtract dark from data
         if subtract_dark==True:
             s-=d
         
-        print "dark subtracted signal (corrected and not corrected): %g, %g" %(s, s_temp-d_temp)
+        print("dark subtracted signal (corrected and not corrected): %g, %g" %(s, s_temp-d_temp))
         #print bias_frame[j,i]
         #sys.exit(1)
 
@@ -315,9 +315,9 @@ def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=
             delta_sum_stamp.append(sum_stamp[counter]-sum_stamp[counter-1])
         delta_sum_stamp.append(sum_stamp)
         counter+=1
-    print " "
-    print "j, i: ", j, i
-    print " "
+    print(" ")
+    print("j, i: ", j, i)
+    print(" ")
     #if j == 2 and i == 2: 
     #    sys.exit()
 
@@ -334,12 +334,12 @@ def correct_and_fit_pixel_ramp (ramp='', dark_ramp='', time='', i=0, j=0, pinit=
  
 
     #print "time_vec, corrected signal_vec, signal/time: ", time_vec, signal_vec, signal_vec/time_vec
-    print "diff time, diff signal, ratio of diffs ", a, b, b/a
+    print("diff time, diff signal, ratio of diffs ", a, b, b/a)
 
 
     if np.isnan(signal_vec).any() or np.isinf(signal_vec_err).any():
         flag=True
-        print "inside corract_and fit function, NAN ", signal_vec, signal_vec_err
+        print("inside corract_and fit function, NAN ", signal_vec, signal_vec_err)
         #sys.exit()
         return [0.,0.,0.], np.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]]) , 0., flag, r, b, delta_sum_stamp, signal_vec
     else:
@@ -371,13 +371,13 @@ def get_final_parameters_first_fit (x=[], y=[], y_err=[], order=2):
     elif order ==3:
         pinit=pinit_cubic
     else:
-        print "wrong order in get_final_parameters_first_fit "
+        print("wrong order in get_final_parameters_first_fit ")
         sys.exit() 
 
     ###  this function gets all the parameters according to the polynomial order: alpha, beta, gamma, delta, etc
     #x,y,y_err = np.array(x), np.array(y), np.array(y_err)
     
-    print "Inside get_final_parameters_first_fit (x, y, y_err): ", x,y,y_err
+    print("Inside get_final_parameters_first_fit (x, y, y_err): ", x,y,y_err)
     for i in range(len(y)):
 	if y[i] < 0: 
             y[i] = 0
@@ -390,7 +390,7 @@ def get_final_parameters_first_fit (x=[], y=[], y_err=[], order=2):
         fitfunc=fitfunc_cubic
         p0=np.ones(order+1)
     else:
-        print 
+        print() 
 
 
     pfinal, covar=optimize.curve_fit(fitfunc,x, y, p0=p0, sigma=y_err,  maxfev=1000000000)
@@ -420,7 +420,7 @@ def aux_quadratic_fit (t_vec, s_vec, s_e_vec, label="_", order=2):
 
     p, c, chi2 = get_final_parameters_first_fit (x=t_vec, y=s_vec, y_err=s_e_vec, order=order)
     pe=np.sqrt(np.diag(c))
-    print "p, pe, chi2: ", p, pe, chi2
+    print("p, pe, chi2: ", p, pe, chi2)
     p_all=np.array([p,pe])
     #np.savetxt (outdir+"parameters_quadratic_%s.txt"%label, p_all)
     return p, pe, chi2, c
@@ -432,12 +432,13 @@ def get_residual_error (l='', s='', varc0='', varc1='', covc0c1='', t=''):
 
 
 def run_shell_cmd (cmd):
-    print >>sys.stderr, cmd
+    print(cmd, file=sys.stderr)
     S.Popen([cmd], shell=True, stdout=S.PIPE).communicate()[0].split()
 
 
 
-def twoD_Gaussian((x, y), amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
+def twoD_Gaussian(xxx_todo_changeme, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
+    (x, y) = xxx_todo_changeme
     xo = float(xo)
     yo = float(yo)    
     a = (np.cos(theta)**2)/(2*sigma_x**2) + (np.sin(theta)**2)/(2*sigma_y**2)
@@ -475,8 +476,8 @@ def plot_ratio_ramps (all, title='', discard=[], threshold=5e-4):
   #new_all_copy=(2**16-1-new_all)*gain
   ramp_mean = np.mean(new_all, axis=0)
 
-  print len(ramp_mean)
-  print len(new_all)
+  print(len(ramp_mean))
+  print(len(new_all))
 
   last_frame_diff_vec=[]
   for i, ramp in enumerate((new_all)): 
@@ -522,8 +523,8 @@ def plot_ratio_ramps (all, title='', discard=[], threshold=5e-4):
     ax.set_xlabel('frame number')
     ax.set_ylabel('(ramp kth[region]/ <ramp>[region]) - 1')
   
-  print last_frame_diff_vec
-  print len(last_frame_diff_vec)
+  print(last_frame_diff_vec)
+  print(len(last_frame_diff_vec))
 
   ax=fig.add_subplot(212)
   plt.plot(last_frame_diff_vec, '.-' )
@@ -544,8 +545,8 @@ def plot_near_nl_corr (fig, frame, p_spot_corr, signal_corrected_spots, p_flat_c
     #linear_s=[ 19334.6704245, 38669.3408489, 58004.0112734, 77338.6816978, 96673.3521223 ]
     res_s=100*(signal_corrected_spots-linear_s)/linear_s
   
-    print "linear_s: ", linear_s
-    print "signal_corrected_spots ", signal_corrected_spots
+    print("linear_s: ", linear_s)
+    print("signal_corrected_spots ", signal_corrected_spots)
     
     linear_f = p_flat_corr[1]*time_flats
     #linear_f=[18000.0000000, 36000.0000000, 54000.0000000, 72000.0000000, 90000.0000000]
@@ -553,8 +554,8 @@ def plot_near_nl_corr (fig, frame, p_spot_corr, signal_corrected_spots, p_flat_c
     #linear_f=[27000.0000000, 54000.0000000, 81000.0000000, 108000.0000000, 135000.0000000] 
     res_f=100*(signal_corrected_flats-linear_f)/linear_f
                     
-    print "linear_f: ", linear_f
-    print "signal_corrected_flats ", signal_corrected_flats
+    print("linear_f: ", linear_f)
+    print("signal_corrected_flats ", signal_corrected_flats)
 
     flag=False
     if  (np.max(np.abs(res_f))) > nl_threshold_f or (np.max(np.abs(res_s))) > nl_threshold_s:
@@ -571,9 +572,9 @@ def plot_near_nl_corr (fig, frame, p_spot_corr, signal_corrected_spots, p_flat_c
     ax.set_title("%g electrons.\n Position: (%g,%g)" %(signal_corrected_spots[-1],pos_x,pos_y), size=8)
     plt.tight_layout() 
 
-    print "plot_near_nl_corr residuals spots in %: ", res_s
-    print "plot_near_nl_corr residuals flats in %: ", res_f 
-    print  "plot_near_nl_corr: ", frame, p_spot_corr, signal_corrected_spots, p_flat_corr, signal_corrected_flats, pos_x, pos_y 
+    print("plot_near_nl_corr residuals spots in %: ", res_s)
+    print("plot_near_nl_corr residuals flats in %: ", res_f) 
+    print("plot_near_nl_corr: ", frame, p_spot_corr, signal_corrected_spots, p_flat_corr, signal_corrected_flats, pos_x, pos_y) 
 
     ### PRINT 
     if frame == 5: string="center"
@@ -598,8 +599,8 @@ def plot_near_nl_corr (fig, frame, p_spot_corr, signal_corrected_spots, p_flat_c
 
 def plot_pixel_ramp(ramp='', time='', fig='',i=0, j=0, counter='', fmt='k-o', plot_flag=False):
     if not len (ramp) == len (time):
-	print "inside function 'plot_pixel_ramp': len(ramp) not equal to len (time)."
-        print "len(ramp), len(time): ", len(ramp), len(time)
+	print("inside function 'plot_pixel_ramp': len(ramp) not equal to len (time).")
+        print("len(ramp), len(time): ", len(ramp), len(time))
         sys.exit()
 
     time_vec, signal_vec, signal_vec_err=[],[],[]
@@ -653,7 +654,7 @@ def stack_ramps_and_plot (ax, ramps_dict_mean_signal, ramps_dict, fmt_string, co
     ramps_vector=np.array(ramps_vector)
         
     if not len (ramps_vector) == len (signal_vector): 
-        print "ERROR"
+        print("ERROR")
         sys.exit()
 
     #print "HOLA 2"
@@ -679,13 +680,13 @@ def stack_ramps_and_plot (ax, ramps_dict_mean_signal, ramps_dict, fmt_string, co
         #    stacked_err.append(0)
         #    stacked_numbers.append(1)
         #    continue
-        print "Bin: %g, number of objects: %g" %(k, len(ramps_vector[:,k]))
+        print("Bin: %g, number of objects: %g" %(k, len(ramps_vector[:,k])))
      	#if len(ramps_vector) == 0: continue
-        print "ramps_vector[:,k]:", ramps_vector[:,k]
-        print "signal_vector[:,k]:", signal_vector[:,k]
+        print("ramps_vector[:,k]:", ramps_vector[:,k])
+        print("signal_vector[:,k]:", signal_vector[:,k])
 
         if k == -1:
-            print "hola" 
+            print("hola") 
             #stacked_signal.append(0)
             #stacked.append(0)
             #stacked_err.append(0)
@@ -707,7 +708,7 @@ def stack_ramps_and_plot (ax, ramps_dict_mean_signal, ramps_dict, fmt_string, co
                 stacked_err.append(temp_sigma)
        	        n=len(indices)
     	    
-            print "Number of points in bin %g: %g " %(k,n)
+            print("Number of points in bin %g: %g " %(k,n))
     	    stacked_numbers.append(n)
 
     stacked_signal = np.array(stacked_signal)
@@ -718,9 +719,9 @@ def stack_ramps_and_plot (ax, ramps_dict_mean_signal, ramps_dict, fmt_string, co
     #stacked=np.mean(ramps_vector, axis=0)   #Old way: just mean, no sigma clipping
     #stacked_err=np.std(ramps_vector, axis=0)
 
-    samples=(range(1, len(stacked)+1))
+    samples=(list(range(1, len(stacked)+1)))
     #print "Samples, STACKED: ", samples, stacked
-    print stacked_signal, stacked_err, stacked_numbers
+    print(stacked_signal, stacked_err, stacked_numbers)
 
     plt.errorbar (stacked_signal ,stacked, yerr=stacked_err/np.sqrt(stacked_numbers), fmt=fmt_string, markersize=4, label=label)
     #plt.errorbar (samples,stacked, yerr=stacked_err/np.sqrt(len(ramps_vector[:,1])), fmt=fmt_string, markersize=4, label=label)
@@ -735,9 +736,9 @@ def stack_ramps_and_plot (ax, ramps_dict_mean_signal, ramps_dict, fmt_string, co
         ax.set_yticklabels(ax.get_yticks(), size=5, visible=True)
         #plt.ylim([-0.03, 0.005])
     else:    
-        print "hola nada!!"
+        print("hola nada!!")
         #plt.ylim([-2e-3,5e-3])
-    print "range(shapes_darks[0]): ", range(shapes_darks[0])
+    print("range(shapes_darks[0]): ", list(range(shapes_darks[0])))
     #plt.xlim([0, np.max(range(shapes_darks[0]))])  # number of samples
     #plt.ylim([0, -1e-2])
 
@@ -765,7 +766,7 @@ def stack_ramps_and_plot (ax, ramps_dict_mean_signal, ramps_dict, fmt_string, co
 
     ax.tick_params(labelsize=7)
     #ax.set_title (title + " \n pixel#: %g"%(counter_pixel), size=6)
-    print "HELLO "
+    print("HELLO ")
 
     return (stacked_signal, stacked, stacked_err/np.sqrt(stacked_numbers))
 
@@ -784,13 +785,13 @@ def stack_ramps_and_plot2 (ax, ramps_dict, fmt_string, counter_pixel, label=" ",
     ##### Stack vectors doing sigma clipping in each component
     #print "len(ramps_vector): ", len(ramps_vector)
     #print "ramps_vector[:,k]: ", ramps_vector[:,1]
-    print ramps_vector.shape
+    print(ramps_vector.shape)
 
 
     for r in ramps_vector:
         if len(ramps_vector) == 0:
             r=np.zeros(len(GLOBAL_SPOTS))
-        plt.errorbar (range(len(r)),r, yerr=None, fmt=fmt_string, markersize=2)
+        plt.errorbar (list(range(len(r))),r, yerr=None, fmt=fmt_string, markersize=2)
 
 
     #plt.errorbar (samples,stacked, yerr=stacked_err/np.sqrt(len(ramps_vector[:,1])), fmt=fmt_string, markersize=4, label=label)
@@ -799,11 +800,11 @@ def stack_ramps_and_plot2 (ax, ramps_dict, fmt_string, counter_pixel, label=" ",
     elif STAMP_SIZE == 3 and counter_pixel==5:  #5
         plt.legend(loc='upper right', fancybox=True, ncol=1, numpoints=1, prop = prop)
     else:
-        print "Incorrect STAMP_SIZE"
+        print("Incorrect STAMP_SIZE")
         sys.exit(1)
 
     #plt.xlim([0,nsamples+1])
-    plt.xlim([0,range(shapes_darks[0])])
+    plt.xlim([0,list(range(shapes_darks[0]))])
     #plt.ylim([0, -1e-2])
 
     #ax.fill_between(range(-100,nsamples+100), -2e-3, 2e-3, facecolor='gray', alpha=0.3)
@@ -812,7 +813,7 @@ def stack_ramps_and_plot2 (ax, ramps_dict, fmt_string, counter_pixel, label=" ",
     elif STAMP_SIZE == 3 and counter_pixel in [1,4,7]: #in [1,6,11,16,21]: #in [1,4,7]:
         ax.set_ylabel(r"$f_{N}$", size =8)    
     else:
-        print "Incorrect STAMP_SIZE"
+        print("Incorrect STAMP_SIZE")
         sys.exit(1)  
 
 
@@ -821,7 +822,7 @@ def stack_ramps_and_plot2 (ax, ramps_dict, fmt_string, counter_pixel, label=" ",
     elif STAMP_SIZE == 3 and counter_pixel in [7,8,9]: #[21,22,23,24,25]: #[7,8,9]:
         ax.set_xlabel("Frame number (time)", size =11)
     else: 
-        print "Incorrect STAMP_SIZE"
+        print("Incorrect STAMP_SIZE")
         sys.exit(1)
 
     #if counter_pixel == 5:
@@ -844,7 +845,7 @@ def plot_surrounding_pixels (fig, ramps_dict, fmt, label):
     elif stamp_string == 'three':
         final = 10
     else:
-        print "ERROR!!!!!"
+        print("ERROR!!!!!")
         sys.exit()
 
     for i in range(1,final):
@@ -900,7 +901,7 @@ def plot_surrounding_pixels (fig, ramps_dict, fmt, label):
     elif STAMP_SIZE == 3:
         ramps_vector=ramps_dict[(1,1)]
     else:
-        print "error!!!!!"
+        print("error!!!!!")
         sys.exit()
     ramps_vector=np.array(ramps_vector)
     stacked_central_pixel, stacked_central_pixel_err, stacked_central_pixel_numbers =[],[], []
@@ -933,12 +934,12 @@ def plot_surrounding_pixels (fig, ramps_dict, fmt, label):
     stacked_central_pixel_numbers=np.array(stacked_central_pixel_numbers)
     #stacked_central_pixel=np.mean(ramps_vector, axis=0)
 
-    print "stacked_central_pixel_numbers", stacked_central_pixel_numbers
-    print "stacked_central_pixel_numbers", stacked_central_pixel_numbers
+    print("stacked_central_pixel_numbers", stacked_central_pixel_numbers)
+    print("stacked_central_pixel_numbers", stacked_central_pixel_numbers)
 
 
-    samples=(range(1, len(stacked_central_pixel)+1))
-    print len(samples), len(stacked_surrounding_pixels), len (stacked_central_pixel), range(ramps_vector.shape[1])
+    samples=(list(range(1, len(stacked_central_pixel)+1)))
+    print(len(samples), len(stacked_surrounding_pixels), len (stacked_central_pixel), list(range(ramps_vector.shape[1])))
 
     dict={'1':[], '2':[]}   
           
@@ -951,7 +952,7 @@ def plot_surrounding_pixels (fig, ramps_dict, fmt, label):
     #ax.set_xlabel("Sample number (time)", size =8)
     ax.set_title ("Sum of %g surrounding pixels" %(final-2), size=11)
     plt.legend(loc='upper left', fancybox=True, ncol=1, numpoints=1, prop = prop)
-    plt.xlim([0, np.max(range(shapes_darks[0])) +1  ])
+    plt.xlim([0, np.max(list(range(shapes_darks[0]))) +1  ])
     #plt.ylim([0.24,0.31])
 
     #plt.ylim([-0.8e-7,0.8e-7])
@@ -964,7 +965,7 @@ def plot_surrounding_pixels (fig, ramps_dict, fmt, label):
     ax.set_xlabel("Frame number (time)", size =14)
     ax.set_title ("Signal in Central pixel", size=11)
     #plt.legend(loc='upper left', fancybox=True, ncol=1, numpoints=1, prop = prop)
-    plt.xlim([0, np.max(range(shapes_darks[0])) +1  ])
+    plt.xlim([0, np.max(list(range(shapes_darks[0]))) +1  ])
     #plt.ylim([0.69,0.76])
     #plt.ylim([-7e-6,7e-6])
     #plt.ylim([-3e-2,3e-2])
@@ -977,7 +978,7 @@ def plot_surrounding_pixels (fig, ramps_dict, fmt, label):
 ###### Sum all the 9/25 pixels 
 
 def plot_all_pixels (fig, ramps_dict, fmt, label):
-    print "Entering 'plot_all_pixels'"
+    print("Entering 'plot_all_pixels'")
     surrounding_pixels=[]
     surrounding_pixels_err=[]
     if stamp_string == 'five':
@@ -985,7 +986,7 @@ def plot_all_pixels (fig, ramps_dict, fmt, label):
     elif stamp_string == 'three':
         final = 10
     else:
-        print "error!!!!!"
+        print("error!!!!!")
         sys.exit()
 
     for i in range(1,final):
@@ -1033,7 +1034,7 @@ def plot_all_pixels (fig, ramps_dict, fmt, label):
     stacked_surrounding_pixels_err=np.sqrt ( np.sum(surrounding_pixels_err**2, axis=0)  ) ## add in cuadrature
 
 
-    samples=(range(1, len(stacked_surrounding_pixels)+1))
+    samples=(list(range(1, len(stacked_surrounding_pixels)+1)))
 
     #fig=plt.figure()
     ax=fig.add_subplot(211)
@@ -1044,7 +1045,7 @@ def plot_all_pixels (fig, ramps_dict, fmt, label):
     #ax.set_xlabel("Sample number (time)", size =8)
     ax.set_title ("Sum of all pixels", size=11)
     plt.legend(loc='upper left', fancybox=True, ncol=1, numpoints=1, prop = prop)
-    plt.xlim([0, np.max(range(shapes_darks[0])) +1  ])
+    plt.xlim([0, np.max(list(range(shapes_darks[0]))) +1  ])
     #plt.ylim([0.9,1.1])
 
     #plt.ylim([-0.8e-7,0.8e-7])
@@ -1057,10 +1058,10 @@ def plot_all_pixels (fig, ramps_dict, fmt, label):
     #ax.set_xlabel("Sample number (time)", size =8)
     ax.set_title ("Sum of all pixels (zoomed in)", size=11)
     plt.legend(loc='upper left', fancybox=True, ncol=1, numpoints=1, prop = prop)
-    plt.xlim([0, np.max(range(shapes_darks[0])) +1  ])
+    plt.xlim([0, np.max(list(range(shapes_darks[0]))) +1  ])
     #plt.ylim([0.96,1.01])
     #plt.tight_layout()
-    print "Exiting 'plot_all_pixels'"
+    print("Exiting 'plot_all_pixels'")
 
 
 
@@ -1068,7 +1069,7 @@ def plot_all_pixels (fig, ramps_dict, fmt, label):
 
 ################################## 3. PARAMETERS ################################
 
-Config = ConfigParser.ConfigParser()
+Config = configparser.ConfigParser()
 Config.read("config_bf_ppl.ini")
 
 
@@ -1077,7 +1078,7 @@ dir= Config.get('params', 'OutDirName')
 out_dir=out_dir_root+dir+"/"
 cmd="mkdir -v %s"%(out_dir)
 S.Popen([cmd], shell=True, stdout=S.PIPE).communicate()[0].split()
-print "OUTPUT DIRECTORY: ", out_dir
+print("OUTPUT DIRECTORY: ", out_dir)
 
 out_pdf_name=Config.get('params','OutPDFName')
 pp=PdfPages(out_dir+out_pdf_name)
@@ -1108,7 +1109,7 @@ if polynomial_order == 2:
 elif polynomial_order == 3:
     fitfunc=fitfunc_cubic
 else:
-    print  "Wrong polynomial order"
+    print("Wrong polynomial order")
     sys.exit()
 
 
@@ -1166,7 +1167,7 @@ elif centroid_type == 'corner':
    MIN_CENTROID_THRESHOLD, MAX_CENTROID_THRESHOLD = np.sqrt(2)*0.5 - centroid_threshold, np.sqrt(2)*0.5
    region=int(Config.get('params', 'RegionCorner'))
 else: 
-    print "Enter a vaild centroid type: center or corner."
+    print("Enter a vaild centroid type: center or corner.")
     sys.exit(1)
 
 SEXTRACTOR=Config.get('params', 'SExtractorPath')
@@ -1343,8 +1344,8 @@ if examine_ramps == True:
 #sys.exit()
 
 
-print "len all Spots, allFlats, allDarks:", len(allSpots), len(allFlats), len(allDarks)
-print "infoSpots: ", infoSpots
+print("len all Spots, allFlats, allDarks:", len(allSpots), len(allFlats), len(allDarks))
+print("infoSpots: ", infoSpots)
 #sys.exit()
 ################################## 5. STACK DATA ################################
 
@@ -1394,7 +1395,7 @@ data_spots=np.zeros(shapes_spots)
 data_darks=np.zeros(shapes_darks)
 data_flats=np.zeros(shapes_flats)
 
-print "shapes_spots, shapes_darks, shapes_flats: ", shapes_spots, shapes_darks, shapes_flats
+print("shapes_spots, shapes_darks, shapes_flats: ", shapes_spots, shapes_darks, shapes_flats)
 
 
 #if not shapes_spots [0] == shapes_darks[0]:
@@ -1410,15 +1411,15 @@ print "shapes_spots, shapes_darks, shapes_flats: ", shapes_spots, shapes_darks, 
 
 
 if not shapes_spots[2] == ysize:
-    print "ysize in spots ramp not 2048"
+    print("ysize in spots ramp not 2048")
     sys.exit(1)
 
 if not shapes_darks[2] == ysize:
-    print "ysize in darks ramp not 2048"
+    print("ysize in darks ramp not 2048")
     sys.exit(1)
 
 if not shapes_flats[2] == ysize:
-    print "ysize in flats ramp not 2048"
+    print("ysize in flats ramp not 2048")
     sys.exit(1)
 
 
@@ -1472,9 +1473,9 @@ B_spots=data_spots[start_sample_spots]
 B_flats=data_flats[start_sample_flats]
 B_darks=data_darks[start_sample_spots]
 
-print np.mean(B_spots), np.mean(B_flats), np.mean(B_darks)
-print B_spots.shape
-print B_spots
+print(np.mean(B_spots), np.mean(B_flats), np.mean(B_darks))
+print(B_spots.shape)
+print(B_spots)
 
 
 data_spots= data_spots[start_sample_spots:end_sample_spots]  
@@ -1485,8 +1486,8 @@ data_darks= data_darks[start_sample_spots:end_sample_spots]
 M=np.array( [[0,0.007,0],[0.009,-0.032,0.009],[0,0.007,0]] )
 I=np.array([[0,0,0],[0,1,0],[0,0,0]])
 K=I-M
-print "K: "
-print K
+print("K: ")
+print(K)
 
 
 ## Loop over each sample, correct for IPC
@@ -1494,11 +1495,11 @@ GLOBAL_SPOTS, GLOBAL_FLATS= [], []
 darks=[]
 
 if not len(data_spots) == len(data_darks):
-	print "len of data_spots and data_darks is different"
+	print("len of data_spots and data_darks is different")
         sys.exit()
 
 for sample_s, sample_d in zip(data_spots, data_darks):
-    print " "
+    print(" ")
     con_s = ndimage.filters.convolve (sample_s, K, mode='constant', cval=0.0)
     con_d = ndimage.filters.convolve (sample_d, K, mode='constant', cval=0.0)
     if correct_IPC==False: 
@@ -1507,7 +1508,7 @@ for sample_s, sample_d in zip(data_spots, data_darks):
     darks.append(con_d) 
 
 for sample_f in data_flats:
-    print " "
+    print(" ")
     con_f = ndimage.filters.convolve (sample_f, K, mode='constant', cval=0.0)
     if correct_IPC==False:
         con_f= sample_f
@@ -1529,11 +1530,11 @@ allFlats=0
 #    sys.exit(1)
 
 
-print "infoDarks['sample'][0]: ", infoDarks['sample'][0] 
-print "infoFlats['sample'][0]: ", infoFlats['sample'][0]
+print("infoDarks['sample'][0]: ", infoDarks['sample'][0]) 
+print("infoFlats['sample'][0]: ", infoFlats['sample'][0])
 
-print "shapes_darks[0]: ", shapes_darks[0]
-print "shapes_flats[0]: ", shapes_spots[0]
+print("shapes_darks[0]: ", shapes_darks[0])
+print("shapes_flats[0]: ", shapes_spots[0])
 
 
 ####### FOR THE TIME VECTOR; if LODFILE is not V2, start at 0 (old data). If it is V2, start at FRAMTIME
@@ -1547,7 +1548,7 @@ elif lodfile == '/home/user/dsp/lod/tim.euclid.a.20170426.v2.lod' or lodfile == 
     start_time_flats = infoFlats['FRAMTIME'][0]
     start_time_darks = infoDarks['FRAMTIME'][0]  # time_spots is the same as time_darks
 else:
-    print "Please provide files with a valid 'LODFILE' keyword in their headers."
+    print("Please provide files with a valid 'LODFILE' keyword in their headers.")
     sys.exit()
 
 
@@ -1582,34 +1583,34 @@ time_flats=time_flats[start_sample_flats:end_sample_flats]
 
 #time_spots=time_darks
 
-print "len(time_darks), len(time_flats): ", len(time_darks), len(time_flats)
-print "len(GLOBAL_SPOTS): ", len(GLOBAL_SPOTS)
+print("len(time_darks), len(time_flats): ", len(time_darks), len(time_flats))
+print("len(GLOBAL_SPOTS): ", len(GLOBAL_SPOTS))
 
 
-print "Time darks:", time_darks
-print "Time flats:", time_flats
+print("Time darks:", time_darks)
+print("Time flats:", time_flats)
 #sys.exit()
 
 
 if not len(time_flats) == len(GLOBAL_FLATS):
-    print "len(time_flats) not the same as len(GLOBAL_FLATS)"
-    print len(time_flats), len(GLOBAL_FLATS)
+    print("len(time_flats) not the same as len(GLOBAL_FLATS)")
+    print(len(time_flats), len(GLOBAL_FLATS))
     sys.exit()
 
 
 if not len(time_darks) == len(GLOBAL_SPOTS):
-    print "len(time_darks) not the same as len(GLOBAL_SPOTS)"
-    print len(time_darks), len(GLOBAL_SPOTS)
+    print("len(time_darks) not the same as len(GLOBAL_SPOTS)")
+    print(len(time_darks), len(GLOBAL_SPOTS))
     sys.exit()
 
 if not len(time_darks) == len(darks):
-    print "len(time_darks) not the same as len(GLOBAL_darks)"
-    print len(time_darks), len(darks)
+    print("len(time_darks) not the same as len(GLOBAL_darks)")
+    print(len(time_darks), len(darks))
     sys.exit()
 
 
 
-print "len(time_darks), len(time_flats), len(GLOBAL_SPOTS), len(GLOBAL_FLATS), len(darks)", len(time_darks), len(time_flats), len(GLOBAL_SPOTS), len(GLOBAL_FLATS), len(darks)
+print("len(time_darks), len(time_flats), len(GLOBAL_SPOTS), len(GLOBAL_FLATS), len(darks)", len(time_darks), len(time_flats), len(GLOBAL_SPOTS), len(GLOBAL_FLATS), len(darks))
 
 
 cmd="rm "+out_dir+"jay_NORM_spots.dat"; run_shell_cmd(cmd)
@@ -1661,7 +1662,7 @@ gc.collect()
 if simulation == False:    
 
     last=GLOBAL_SPOTS[-1]/gain
-    print "last.shape: ", last.shape
+    print("last.shape: ", last.shape)
     cmd="rm science_andres.fits"; run_shell_cmd(cmd)
     pf.writeto ("science_andres.fits", last, clobber=True)
     prefix="hola"
@@ -1680,7 +1681,7 @@ if simulation == False:
     x_d=data[:,5]
     y_d=data[:,6]
 
-    print len(x_d), len(y_d)
+    print(len(x_d), len(y_d))
     positions_file='Source Extractor'
 else:
     ### SIMULATIONS
@@ -1693,10 +1694,10 @@ else:
     x_d=data_HAND[:,0]
     y_d=data_HAND[:,1]
 
-print len(x_d), len (y_d)
+print(len(x_d), len (y_d))
 #sys.exit()
 
-print "NUMBER OF DETECTED OBJECTS: ", len(x_d)
+print("NUMBER OF DETECTED OBJECTS: ", len(x_d))
 
 x_int, y_int = np.rint(x_d), np.rint(y_d)
 
@@ -1712,8 +1713,8 @@ temp_hist2=[]
 
 DETECTION_GLOBAL_SPOTS=GLOBAL_SPOTS - B_spots  # use this to calculate unweighted centroids 
 
-print GLOBAL_SPOTS
-print B_spots
+print(GLOBAL_SPOTS)
+print(B_spots)
 
 
 x_int_filtered, y_int_filtered, flux_filtered, central_filtered =[],[],[],[] 
@@ -1725,7 +1726,7 @@ if stamp_string == 'three':
 elif stamp_string == 'five':
     stamp_end=2
 else:
-    print "Invalid stamp string"
+    print("Invalid stamp string")
     sys.exit(1)
 
 
@@ -1744,12 +1745,12 @@ for (xc, yc) in zip (x_int, y_int):
     ## TEMP
     #if stamp[2,2] > 6e4: continue    
 
-    print " "  
+    print(" ")  
     ## get local background through median 
     #print DETECTION_GLOBAL_SPOTS[-1][yc + 10:yc+30, xc - 20:xc + 20]
     bck = np.median (DETECTION_GLOBAL_SPOTS[-1][yc + 10:yc+30, xc - 20:xc + 20])
     #bck=0
-    print "local background: ", bck
+    print("local background: ", bck)
     
     if np.isnan(bck): 
     	continue
@@ -1762,18 +1763,18 @@ for (xc, yc) in zip (x_int, y_int):
 
     #print np.max(stamp), np.sum(stamp), np.max(stamp)/np.sum(stamp)
     #temp_hist.append(np.max(stamp)/np.sum(stamp))
-    print stamp
+    print(stamp)
     if stamp_string == 'three':
         x_centroid, y_centroid = get_centroid_3x3 (stamp)    
     elif stamp_string == 'five':
         x_centroid, y_centroid = get_centroid_5x5 (stamp)
     else:
-        print "invalid stamp string"
+        print("invalid stamp string")
         sys.exit(1)
     norm_centroid=np.sqrt (x_centroid**2 + y_centroid**2)
     if np.isnan(norm_centroid) or (norm_centroid > 1.0): continue
     temp_hist2.append(norm_centroid)
-    print "x centroid, y centroid, norm: ", x_centroid, y_centroid, norm_centroid
+    print("x centroid, y centroid, norm: ", x_centroid, y_centroid, norm_centroid)
     
     if centroid_type == 'center':
         if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD):
@@ -1783,7 +1784,7 @@ for (xc, yc) in zip (x_int, y_int):
             central_filtered.append(flux_central)
             x_centroid_filtered.append(x_centroid)
             y_centroid_filtered.append(y_centroid)
-            print "HOLA", xc, yc, norm_centroid, flux
+            print("HOLA", xc, yc, norm_centroid, flux)
 
     if  centroid_type == 'corner':
 
@@ -1798,7 +1799,7 @@ for (xc, yc) in zip (x_int, y_int):
                 central_filtered.append(flux_central)
                 x_centroid_filtered.append(x_centroid)
                 y_centroid_filtered.append(y_centroid)
-                print "HOLA CORNER", xc, yc, norm_centroid, flux  
+                print("HOLA CORNER", xc, yc, norm_centroid, flux)  
 
         if region == 3: 
             if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid < 0) and (y_centroid > 0):    #Region 3
@@ -1808,7 +1809,7 @@ for (xc, yc) in zip (x_int, y_int):
                 central_filtered.append(flux_central)
                 x_centroid_filtered.append(x_centroid)
                 y_centroid_filtered.append(y_centroid)
-                print "HOLA CORNER", xc, yc, norm_centroid, flux
+                print("HOLA CORNER", xc, yc, norm_centroid, flux)
 
         if region ==2 : 
             if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid > 0) and (y_centroid < 0):
@@ -1818,7 +1819,7 @@ for (xc, yc) in zip (x_int, y_int):
                 central_filtered.append(flux_central)
                 x_centroid_filtered.append(x_centroid)
                 y_centroid_filtered.append(y_centroid)
-                print "HOLA CORNER", xc, yc, norm_centroid, flux
+                print("HOLA CORNER", xc, yc, norm_centroid, flux)
 
         if region ==1:
             if (norm_centroid >= MIN_CENTROID_THRESHOLD) and (norm_centroid <= MAX_CENTROID_THRESHOLD) and (x_centroid < 0) and (y_centroid < 0):
@@ -1828,7 +1829,7 @@ for (xc, yc) in zip (x_int, y_int):
                 central_filtered.append(flux_central)
                 x_centroid_filtered.append(x_centroid)
                 y_centroid_filtered.append(y_centroid)
-                print "HOLA CORNER", xc, yc, norm_centroid, flux
+                print("HOLA CORNER", xc, yc, norm_centroid, flux)
 
 
 x_int_filtered=np.array(x_int_filtered)
@@ -1914,7 +1915,7 @@ elif stamp_string == 'five':
                  16:(0,1), 17:(1,1), 18:(2,1), 19:(3,1), 20:(4,1),\
                  21:(0,0), 22:(1,0), 23:(2,0), 24:(3,0), 25:(4,0)}
 else:
-    print "invalid string stamp"
+    print("invalid string stamp")
     sys.exit(1)
 
 
@@ -1940,7 +1941,7 @@ initialize_ramps_dict (ramps_dict_fbin1)
 initialize_ramps_dict (ramps_dict_fbin2)
 initialize_ramps_dict (ramps_dict_fbin3)
 
-print len(x_int), len(y_int)
+print(len(x_int), len(y_int))
 super_counter=1
 
 max_vec=[]
@@ -1956,7 +1957,7 @@ c0_diff_darks_vec=[]
 
 to_plot=[1,2,3,4,5,10,15,20,25,30,35,40,45,50,51,52,60,63,68,70,72,73,75,79, 74,115,180,181,206,226,228,274,306,317,318,321,340,344,345]
 
-print np.min(flux_filtered), np.max(flux_filtered)
+print(np.min(flux_filtered), np.max(flux_filtered))
 
 NORM_flats_big_vec=[]
 NORM_spots_big_vec=[]
@@ -1991,7 +1992,7 @@ SUM_STAMP_3D_DARKS=[]
 end=int(Config.get('params', 'EndSpotVector'))
 for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filtered[:end], flux_filtered[:end], central_filtered[:end]) ):
     if xc < x_cut or yc < y_cut: 
-        print "skipping: ", xc, yc
+        print("skipping: ", xc, yc)
         continue 
     #if (xc,yc) in [(1251,10),(1259,10)]:
     #    continue
@@ -1999,9 +2000,9 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
 
     stamp=GLOBAL_SPOTS[-1][yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
     stamp_mask = MASK [yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
-    print "stamp_mask sum: ", np.sum(stamp_mask)
+    print("stamp_mask sum: ", np.sum(stamp_mask))
     if not np.sum(stamp_mask) == 0:
-	print "Discarding spot because it has at least one bad pixel"
+	print("Discarding spot because it has at least one bad pixel")
         continue
 
 
@@ -2019,13 +2020,13 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
 
  
 
-    print " "
-    print "OBJECT AT: (%g,%g)" %(xc, yc)
+    print(" ")
+    print("OBJECT AT: (%g,%g)" %(xc, yc))
     
     max=np.max(stamp)    
     max_vec.append(max)
 
-    print "stamp shape:: ", stamp.shape
+    print("stamp shape:: ", stamp.shape)
     
     c0_mat_spots=0*stamp
     c0_mat_darks=0*stamp
@@ -2083,7 +2084,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
     elif stamp_string == 'five':
         stamp_range_global_x, stamp_range_global_y, stamp_range_local=[xc-2,xc-1,xc,xc+1,xc+2],[ yc-2,yc-1,yc,yc+1,yc+2], [0,1,2,3,4]    
     else:
-        print "invalid stamp_string"
+        print("invalid stamp_string")
         sys.exit(1)
 
     dict_B={(1,1):[[],[]], (1,0):[[],[]], (0,1):[[],[]], (2,1):[[],[]], (1,2):[[],[]]}
@@ -2104,7 +2105,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             stamp_darks=darks[:, yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
 
 
-            print "Last sample of stamp spots: ", stamp_spots[-1]
+            print("Last sample of stamp spots: ", stamp_spots[-1])
             #sys.exit(1)
 
 
@@ -2114,31 +2115,31 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             p_flat, cov_flat, chi2_flat,flag1, signal_flat =fit_pixel_ramp (ramp=stamp_flats,time=time_flats, i=k, j=l, order=polynomial_order)
             if flag1 == True:
                 #siga=True
-                print "flat fit"
+                print("flat fit")
                 sys.exit()
                 #break
      
  
-            print p_flat[0]
+            print(p_flat[0])
             time_darks=np.array(time_darks) 
             p_spot, cov_spot, chi2_spot,flag2, signal_spot =fit_pixel_ramp (ramp=stamp_spots,time=time_darks, i=k, j=l, order=polynomial_order)         
 
 
             if flag2 == True:
                 #siga=True
-                print "spot fit"
+                print("spot fit")
                 sys.exit()
                 #break
-            print p_spot[0]           
+            print(p_spot[0])           
 
             
-            print "time_flats, p_flat", time_flats, p_flat
-            print "time_darks, p_spot", time_darks, p_spot
+            print("time_flats, p_flat", time_flats, p_flat)
+            print("time_darks, p_spot", time_darks, p_spot)
  
             p_dark, cov_dark, chi2_dark,flag3, signal_dark =fit_pixel_ramp (ramp=stamp_darks,time=time_darks, i=k, j=l, order=polynomial_order)
             if flag3 == True: 
                 #siga=True
-                print "dark fit"
+                print("dark fit")
                 sys.exit()
                 #break
             
@@ -2146,7 +2147,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             ### To test NL model, print data - model / model for centra pixel in flats
             model_flat = fitfunc (time_flats, *p_flat)
             if not len (model_flat) == len (signal_flat):
-                    print "Lengths of model and signal in flat not the same"
+                    print("Lengths of model and signal in flat not the same")
                     sys.exit(1)
             residual_absolute=(signal_flat - model_flat)
 
@@ -2154,8 +2155,8 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
 
 
             residual=100*residual_absolute/ model_flat
-            print "MODEL ABSOLUTE RESIDUAL AND RELATIVE RESIDUAL (%) IN  PIXEL: ", k,l,  residual_absolute, residual
-            print "polynomial order: ", polynomial_order            
+            print("MODEL ABSOLUTE RESIDUAL AND RELATIVE RESIDUAL (%) IN  PIXEL: ", k,l,  residual_absolute, residual)
+            print("polynomial order: ", polynomial_order)            
 
             dict_residual[(k,l)].append(residual)
             dict_residual_absolute[(k,l)].append(residual_absolute)            
@@ -2165,9 +2166,9 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             dict_median_flux_flats[(k,l)].append(signal_flat)
             dict_median_flux_spots[(k,l)].append(signal_spot)
 
-            print "p_flat[0], p_dark[0], p_spot[0]: ", p_flat[0], p_dark[0], p_spot[0]
+            print("p_flat[0], p_dark[0], p_spot[0]: ", p_flat[0], p_dark[0], p_spot[0])
  
-            print "p_flat[0], p_dark[0], p_spot[0]: ", p_flat[0], p_dark[0], p_spot[0]
+            print("p_flat[0], p_dark[0], p_spot[0]: ", p_flat[0], p_dark[0], p_spot[0])
 
             p_spot_corr, cov_spot_corr, chi2_spot_corr, flag4, flux_rate_spots, delta_signal_spots, delta_sums_spots, signal_corrected_spots = correct_and_fit_pixel_ramp (ramp=stamp_spots, dark_ramp=stamp_darks, time=time_darks, i=k, j=l, pinit=pinit_quad, c0_spot=p_spot[0], c0_dark=p_dark[0], c1_spot=p_spot[1], c1_dark=p_dark[1], c2=p_spot[2])
             
@@ -2177,7 +2178,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
              
  
             
-            print "Last sampe of stamp flats: ", stamp_flats[-1]
+            print("Last sampe of stamp flats: ", stamp_flats[-1])
 
             p_flat_corr, cov_flat_corr, chi2_flat_corr, flag4, flux_rate_flats, delta_signal_flats, delta_sum_flats, signal_corrected_flats = correct_and_fit_pixel_ramp (ramp=stamp_flats, dark_ramp=stamp_darks, time=time_flats, i=k, j=l, pinit=pinit_quad, c0_spot=p_flat[0], c0_dark=p_dark[0], c1_spot=p_flat[1], c1_dark=p_dark[1], c2=p_flat[2])
 
@@ -2201,18 +2202,18 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
                     use4=plot_near_nl_corr (fig_near, 8, p_spot_corr, signal_corrected_spots, p_flat_corr, signal_corrected_flats, xc, yc-1)
                 
                 if (i == xc) and (j == yc):
-                    print "XC, YC: ", xc, yc 
+                    print("XC, YC: ", xc, yc) 
                     use5=plot_near_nl_corr (fig_near, 5, p_spot_corr, signal_corrected_spots, p_flat_corr, signal_corrected_flats, xc, yc)
    
 
-            print " "
-            print "p flats , pe flats: ", p_flat, np.diag(cov_flat)
-            print "p spots, pe spots: ", p_spot, np.diag(cov_spot)
-            print "p dark, pe darks: ", p_dark, np.diag(cov_dark)
-            print "p spots corr, pe spots corr:  ", p_spot_corr, np.diag(cov_spot_corr)
-            print "flag1, flag2, flag3: ", flag1, flag2, flag3
-            print "counter, i, j, xc, yc: ", counter, i, j, xc, yc
-            print " "
+            print(" ")
+            print("p flats , pe flats: ", p_flat, np.diag(cov_flat))
+            print("p spots, pe spots: ", p_spot, np.diag(cov_spot))
+            print("p dark, pe darks: ", p_dark, np.diag(cov_dark))
+            print("p spots corr, pe spots corr:  ", p_spot_corr, np.diag(cov_spot_corr))
+            print("flag1, flag2, flag3: ", flag1, flag2, flag3)
+            print("counter, i, j, xc, yc: ", counter, i, j, xc, yc)
+            print(" ")
 
 
             if polynomial_order == 3: 
@@ -2269,16 +2270,16 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
     # Produce a NL-corrected stamp
     GLOBAL_SPOTS_STAMPS_CORR, corr_stamps_sum=[],[]
     for t, stamp, dark_stamp in zip(time_darks, GLOBAL_SPOTS[:, yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end], darks [:,yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]):
-	print "stamp: ", stamp
-	print " "
-   	print "dark_stamp: ", dark_stamp
-        print " "
-        print "c2_mat_flats: ", c2_mat_flats
-        print " "
-        print "c0_mat_spots: ", c0_mat_spots
-        print " "
-        print "c0_mat_darks: ", c0_mat_darks
-        print " "
+	print("stamp: ", stamp)
+	print(" ")
+   	print("dark_stamp: ", dark_stamp)
+        print(" ")
+        print("c2_mat_flats: ", c2_mat_flats)
+        print(" ")
+        print("c0_mat_spots: ", c0_mat_spots)
+        print(" ")
+        print("c0_mat_darks: ", c0_mat_darks)
+        print(" ")
         
 	#Quadratic formula correction. Gives same results as np.root when order == 2 (see lines below). 
 	#corr_stamp_spots = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_spots-stamp)) )
@@ -2293,7 +2294,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
         
         #"""
         if polynomial_order == 3: 
-            print "c3_mat_flats", c3_mat_flats
+            print("c3_mat_flats", c3_mat_flats)
             for (j,i),s_temp in np.ndenumerate(stamp):
                 roots_cubic_spots = np.roots ([c3_mat_flats[j,i]*c1_mat_spots[j,i]**3, c2_mat_flats[j,i]*c1_mat_spots[j,i]**2, c1_mat_spots[j,i], c0_mat_spots[j,i] - s_temp])
                 corr_stamp_spots[j,i] = c1_mat_spots[j,i]*np.real(roots_cubic_spots[2]) # the first two roots are complex
@@ -2310,11 +2311,11 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
                 corr_stamp_darks[j,i] = c1_mat_darks[j,i]*np.real(roots_quad_darks[1]) 
                 
         else:
-            print "Wrong polynomial order: ", polynomial_order
+            print("Wrong polynomial order: ", polynomial_order)
             sys.exit()
         
 
-        print "corr_stamp_darks method 2: ", corr_stamp_darks
+        print("corr_stamp_darks method 2: ", corr_stamp_darks)
         #sys.exit()
         #"""
 
@@ -2330,9 +2331,9 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             else:
                 corr_stamp = corr_stamp_spots
 
-        print "corr_stamp_spots: ", corr_stamp_spots
+        print("corr_stamp_spots: ", corr_stamp_spots)
 	#print "corr_stamp_darks: ", corr_stamp_darks
-        print "corr_stamp: ", corr_stamp
+        print("corr_stamp: ", corr_stamp)
 
 
         GLOBAL_SPOTS_STAMPS_CORR.append (corr_stamp)
@@ -2345,20 +2346,20 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
     GLOBAL_DARKS_STAMPS_CORR, corr_stamps_darks_sum=[],[]
 
     for t, stamp, dark_stamp in zip(time_flats, GLOBAL_FLATS[:, yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end], darks [:,yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]):
-        print "FLAT stamp: ", stamp
-        print " "
-        print "dark_stamp: ", dark_stamp
-        print " "
-        print "c2_mat_flats: ", c2_mat_flats
-        print " "
-        print "c0_mat_spots: ", c0_mat_spots
-        print " "
-        print "c0_mat_darks: ", c0_mat_darks
-        print " "
+        print("FLAT stamp: ", stamp)
+        print(" ")
+        print("dark_stamp: ", dark_stamp)
+        print(" ")
+        print("c2_mat_flats: ", c2_mat_flats)
+        print(" ")
+        print("c0_mat_spots: ", c0_mat_spots)
+        print(" ")
+        print("c0_mat_darks: ", c0_mat_darks)
+        print(" ")
         corr_stamp_flats = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_flats-stamp)) )
         corr_stamp_darks = (1/(2*c2_mat_flats))*(-1+np.sqrt(1-4*c2_mat_flats*(c0_mat_darks-dark_stamp)) )
         #print "corr_stamp_darks: ", corr_stamp_darks
-        print " "
+        print(" ")
 
         """
         corr_stamp_flats=1.0*np.ones_like(stamp)
@@ -2396,9 +2397,9 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             else:
                 corr_stamp = corr_stamp_flats 
 
-        print "corr_stamp_flats: ", corr_stamp_flats
+        print("corr_stamp_flats: ", corr_stamp_flats)
         #print "corr_stamp_darks: ", corr_stamp_darks
-        print "corr_stamp: ", corr_stamp
+        print("corr_stamp: ", corr_stamp)
 
         GLOBAL_FLATS_STAMPS_CORR.append (corr_stamp)
         corr_stamps_flats_sum.append(np.sum(corr_stamp))
@@ -2411,14 +2412,14 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
     ##### Calculate the size of the corrected stamp
     temp_size, temp_central_signal=[],[]
     for i in range(0,len(GLOBAL_SPOTS_STAMPS_CORR)-1):
-        print i
+        print(i)
         #bck_f = np.median (DETECTION_GLOBAL_SPOTS[i+1][yc + 10:yc+30, xc - 20:xc + 20]) 
         #bck_i = np.median (DETECTION_GLOBAL_SPOTS[i][yc + 10:yc+30, xc - 20:xc + 20]) 
         stamp_f = GLOBAL_SPOTS_STAMPS_CORR[i+1]#[yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end] #- bck_f
         stamp_i = GLOBAL_SPOTS_STAMPS_CORR[i]#[#yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end] #- bck_i
         diff=stamp_f-stamp_i
         ref_e1, ref_e2, ref_s, centroid_x, centroid_y, dxc, dyc = moments.measure_e1e2R2(diff, skysub=False, sigma=1)
-        print i,  ref_e1, ref_e2, ref_s, centroid_x, centroid_y
+        print(i,  ref_e1, ref_e2, ref_s, centroid_x, centroid_y)
         temp_size.append(ref_s)
         temp_central_signal.append(  (stamp_f[1,1] + stamp_i[1,1])*0.5  )
 
@@ -2458,12 +2459,12 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             charge_previous_pixel=np.array(charge_previous_pixel)
             delta_mean_signal=np.array(delta_mean_signal)
 
-            print delta_mean_signal
+            print(delta_mean_signal)
             #sys.exit()
 
             s_vec=delta_sig/delta_sum
             rates_vec_jay=delta_sig/delta_time ## Rates
-	    print "JAY's METRIC: delta_sig, delta_time: ratio is rates_vec_jay ", delta_sig, delta_time, rates_vec_jay 
+	    print("JAY's METRIC: delta_sig, delta_time: ratio is rates_vec_jay ", delta_sig, delta_time, rates_vec_jay) 
 
 
             ### Second 'derivative' for Jay's metric
@@ -2491,7 +2492,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             val0=rates_vec_jay[0]
             for val in rates_vec_jay:
                 val=(val-val0)
-                print "VAL: ", val
+                print("VAL: ", val)
                 s_vec_jay.append(val)    
 
             s_vec_jay=np.array(s_vec_jay)        
@@ -2517,14 +2518,14 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
             #### Actual f_N metric
             s_vec_jay=s_vec_jay/NORM    
 
-            print "s_vec_jay, s_vec_jay_no_norm, NORM : ", s_vec_jay, s_vec_jay_no_norm, NORM 
+            print("s_vec_jay, s_vec_jay_no_norm, NORM : ", s_vec_jay, s_vec_jay_no_norm, NORM) 
             #sys.exit() 
 
-            print "CHAZ's metric: delta_sig, delta_sum, s_vec ", delta_sig, delta_sum, s_vec
-            print "JAY's metric: NORM, rates_vec_jay, s_vec_jay ", NORM, rates_vec_jay, s_vec_jay
+            print("CHAZ's metric: delta_sig, delta_sum, s_vec ", delta_sig, delta_sum, s_vec)
+            print("JAY's metric: NORM, rates_vec_jay, s_vec_jay ", NORM, rates_vec_jay, s_vec_jay)
 
             if np.isnan(s_vec).any() == True or np.isnan(s_vec_jay).any() == True:
-               print "Breaking bad"
+               print("Breaking bad")
                siga=True
                break
           
@@ -2534,31 +2535,31 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
 
             if k == 1 and l == 1:
                 c=dict_B[(1,1)][0][1]
-                print "central c1: ", c
+                print("central c1: ", c)
                 sum=0
                 for key in [(1,0),(0,1),(1,2),(2,1)]:
                     sum+=dict_B[key][0][1]
                 sum/=4.0 # mean contrast in neighbors 
-                print "c1*1000, <c1_neighbors>*1000: ", c*1000, sum*1000
+                print("c1*1000, <c1_neighbors>*1000: ", c*1000, sum*1000)
                 fc=1000*(c-sum)
                 c1=dict_B[(1,1)][0][1]*1000
                 c2=dict_B[(1,1)][0][2]
                 if fc == 0: continue
                 b = 2*(c1)*(c2)/fc
 
-                samples=range(1, len(s_vec_jay) + 1)
+                samples=list(range(1, len(s_vec_jay) + 1))
                 err=np.repeat(1, len(s_vec_jay))
 		m, m_err=linear_fit_m (samples, s_vec_jay, err)
-                print " "
-                print " "
-                print " "
-                print "F_C, B, c1, c2, m, m_err, m/F_c: ", fc,  b, c1, c2, m , m_err, m/fc
+                print(" ")
+                print(" ")
+                print(" ")
+                print("F_C, B, c1, c2, m, m_err, m/F_c: ", fc,  b, c1, c2, m , m_err, m/fc)
                 ###### DEBUGGING: seems there are some constants messing to get B
                 new_B = (m/fc)*(NORM/(val0*delta_t/1000))   # delta_s in miliseconds            
-                print "old B, new B, NORM, extra factor: ", m/fc, new_B,  NORM, (NORM/(val0*delta_t/1000))
-                print " "
-                print " "
-                print " "
+                print("old B, new B, NORM, extra factor: ", m/fc, new_B,  NORM, (NORM/(val0*delta_t/1000)))
+                print(" ")
+                print(" ")
+                print(" ")
 
                 f=open(out_dir+"jay_B.dat", 'a+')
                 line="%g %g %g %g %g %g %g %g\n" %(fc,b, c1, c2, m, m_err, m/fc, new_B)
@@ -2589,7 +2590,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
         ax=fig1.add_subplot (2,2,1)
         cax=ax.imshow(stamp, cmap=cm.gray, origin="lower", interpolation='nearest')#, vmin=mean_science - mean_science/factor, vmax=mean_science + mean_science/factor)
         for (j,i),label in np.ndenumerate(stamp):
-            print j,i, label
+            print(j,i, label)
             label="%g e/s \n (%g e)" %(label/(time_darks[-1]/1e3), label)
             ax.text(i,j,label,ha='center',va='center', color='red', size=4)
         ax.set_title("Center: (%g,%g) " %(xc,yc))
@@ -2606,7 +2607,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
         for (j,i), label_val in np.ndenumerate(c2_mat_flats):
             label_err=c2_mat_flats_err[j,i]
             label="%.3g +/- \n %.3g" %(label_val, label_err)
-            print j,i, label
+            print(j,i, label)
             ax.text(i,j,label,ha='center',va='center', size=5, color='red')
         fig.colorbar(cax)
 
@@ -2619,7 +2620,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
         for (j,i),label_val in np.ndenumerate(c2_mat_spots):
             label_err=c2_mat_spots_err[j,i]
             label="%.3g +/- \n %.3g" %(label_val, label_err)
-            print j,i, label
+            print(j,i, label)
             ax.text(i,j,label,ha='center',va='center', size=5, color='red')
         fig.colorbar(cax)
 
@@ -2631,7 +2632,7 @@ for L, (xc, yc, f, central) in enumerate( zip (x_int_filtered[:end], y_int_filte
         for (j,i),label_val in np.ndenumerate(c2_mat_spots_corr):
             label_err=c2_mat_spots_corr_err[j,i]
             label="%.3g +/- \n %.3g" %(label_val, label_err)
-            print j,i, label
+            print(j,i, label)
             ax.text(i,j,label,ha='center',va='center', size=5, color='red')
         fig.colorbar(cax)
 
@@ -2677,7 +2678,7 @@ ax=fig1.add_subplot (1,1,1)
 cax=ax.imshow(MEDIAN_STAMP, cmap=cm.gray, origin="lower", interpolation='nearest')#, vmin=mean_science - mean_science/factor, vmax=mean_science + mean_science/factor)
 label_vec=[]
 for (j,i),label in np.ndenumerate(MEDIAN_STAMP):
-            print j,i, label
+            print(j,i, label)
             label_float = label/(time_darks[-1]/1e3)
             label="%g e$^{-}$/s \n (%g e$^{-}$)" %(label/(time_darks[-1]/1e3), label)
             if j == 1 and i == 1:
@@ -2691,7 +2692,7 @@ pp.savefig()
 label_vec=np.array(label_vec)
 np.savetxt (out_dir+"jay_median_spot_fluxes.dat", label_vec)
 
-print MEDIAN_STAMP
+print(MEDIAN_STAMP)
 #sys.exit()
 
 #DARKS
@@ -2699,7 +2700,7 @@ fig1=plt.figure()
 ax=fig1.add_subplot (1,1,1)
 cax=ax.imshow(MEDIAN_STAMP_DARKS, cmap=cm.gray, origin="lower", interpolation='nearest')#, vmin=mean_science - mean_science/factor, vmax=mean_science + mean_science/factor)
 for (j,i),label in np.ndenumerate(MEDIAN_STAMP_DARKS):
-            print j,i, label
+            print(j,i, label)
             label="%g e$^{-}$/s \n (%g e$^{-}$)" %(label/(time_darks[-1]/1e3), label)
             if j == 1 and i == 1:
                 ax.text(i,j,label,ha='center',va='center', color='black', size=11)
@@ -2715,7 +2716,7 @@ fig1=plt.figure()
 ax=fig1.add_subplot (1,2,1)
 cax=ax.imshow(MEDIAN_STAMP, cmap=cm.gray, origin="lower", interpolation='nearest')#, vmin=mean_science - mean_science/factor, vmax=mean_science + mean_science/factor)
 for (j,i),label in np.ndenumerate(MEDIAN_STAMP):
-            print j,i, label
+            print(j,i, label)
             label="%g e$^{-}$/s \n (%g e$^{-}$)" %(label/(time_darks[-1]/1e3), label)
             if j == 1 and i == 1:
                 ax.text(i,j,label,ha='center',va='center', color='black', size=9)
@@ -2731,7 +2732,7 @@ for (j,i),label in np.ndenumerate(MEDIAN_STAMP):
 ax=fig1.add_subplot (1,2,2)
 cax=ax.imshow(MEDIAN_STAMP_FLATS, cmap=cm.gray, origin="lower", interpolation='nearest')#, vmin=mean_science - mean_science/factor, vmax=mean_science + mean_science/factor)
 for (j,i),label in np.ndenumerate(MEDIAN_STAMP_FLATS):
-            print j,i, label
+            print(j,i, label)
             label="%g e$^{-}$/s \n (%g e$^{-}$)" %(label/(time_darks[-1]/1e3), label)
             if j == 1 and i == 1:
                 ax.text(i,j,label,ha='center',va='center', color='black', size=9)
@@ -2790,21 +2791,21 @@ for key in dict_residual:
     pixel_number=get_pixel_index[key]
     np.savetxt (out_dir+"jay_residual_pixel_%g_flat.dat" %pixel_number, vec)
 
-    print "vec 1: ", vec
+    print("vec 1: ", vec)
 
 
     vec=np.array(np.array(dict_median_flux_flats[key]))
     vec=np.median(vec,axis=0)
     np.savetxt (out_dir+"jay_median_flux_flats_pixel_%g.dat" %pixel_number, vec)
 
-    print "vec 2: ", vec
+    print("vec 2: ", vec)
 
 
     vec=np.array(np.array(dict_median_flux_spots[key]))
     vec=np.median(vec,axis=0)
     np.savetxt (out_dir+"jay_median_flux_spots_pixel_%g.dat" %pixel_number, vec)
 
-    print "vec 3: ", vec
+    print("vec 3: ", vec)
 
 
     ## Add residual absolute 
@@ -2812,17 +2813,17 @@ for key in dict_residual:
     pixel_number=get_pixel_index[key]
     np.savetxt (out_dir+"jay_residual_absolute_pixel_%g_flat.dat" %pixel_number, vec)
 
-    print "vec 4: ", vec
+    print("vec 4: ", vec)
 
 
 
 
 ################################## 12. Calculate the mean of the size of the postage stamp in each frame; then calculate relative size to first frame ################################
 
-print "len(x_int[0:end]): ", len(x_int[0:end])
+print("len(x_int[0:end]): ", len(x_int[0:end]))
 size_final=np.array(size_final)
 central_signal_size_final=np.array(central_signal_size_final)
-print len(size_final), size_final.shape
+print(len(size_final), size_final.shape)
 size_final_mean=np.nanmean(size_final, axis=0)
 size_final_err=np.nanstd(size_final, axis=0)/np.sqrt(len(size_final[~np.isnan(size_final)]))
 
@@ -2834,15 +2835,15 @@ for a,b,c in zip (size_final_mean, size_final_err, central_signal_size_final_mea
     f.write(line)
 f.close()
 
-print "size_final_mean, size_final_err: ", size_final_mean, size_final_err
-print len(size_final_mean)
+print("size_final_mean, size_final_err: ", size_final_mean, size_final_err)
+print(len(size_final_mean))
 
 
 size_final_mean=(size_final_mean - size_final_mean[0])/size_final_mean[0]
 
 fig=plt.figure()
 ax=fig.add_subplot(111)
-plt.errorbar (range(1,len(size_final_mean)+1), size_final_mean, yerr=size_final_err, markersize=7)
+plt.errorbar (list(range(1,len(size_final_mean)+1)), size_final_mean, yerr=size_final_err, markersize=7)
 ax.set_xlabel('Sample number')
 ax.set_ylabel('Normalized change in size')
 #plt.ylim([-0.001,0.15])
@@ -2851,7 +2852,7 @@ pp.savefig()
 
 
 max_vec, sigma_x_vec = np.array(max_vec), np.array(sigma_x_vec)
-print max_vec, sigma_x_vec
+print(max_vec, sigma_x_vec)
  
 flux_filtered=np.array(flux_filtered)
 
@@ -2867,9 +2868,9 @@ pp.savefig()
 #pp.close()
 #sys.exit()
 
-print "END OF FOR LOOP"
-print len(ramps_dict_all[(1,1)]), len(ramps_dict_all[(2,2)]), len(ramps_dict_all[(0,1)]), len(ramps_dict_all_jay[(0,1)])
-print "SUPER counter: ", super_counter
+print("END OF FOR LOOP")
+print(len(ramps_dict_all[(1,1)]), len(ramps_dict_all[(2,2)]), len(ramps_dict_all[(0,1)]), len(ramps_dict_all_jay[(0,1)]))
+print("SUPER counter: ", super_counter)
 
 ###### Get the ramps for the bins in flux 
 
@@ -2894,14 +2895,14 @@ elif stamp_string == 'three':
     dict2={'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[],'9':[]}
     st_vec=np.zeros(9)
 else:
-    print "error!!! " 
+    print("error!!! ") 
     sys.exit()
 
 
 for j in range(-stamp_end,1+stamp_end):
     for i in range(-stamp_end,1+stamp_end):
         for (l,k), val in np.ndenumerate(st):
-            print l, k, st[k,l]
+            print(l, k, st[k,l])
             pixel_index=get_pixel_index[(l,k)]
             st_vec[pixel_index-1]=st[k,l]
 
@@ -2910,14 +2911,14 @@ for j in range(-stamp_end,1+stamp_end):
         elif stamp_string == 'three':
             ax1=fig.add_subplot(3,3,counter_pixel)
         else:
-            print "error! "
+            print("error! ")
             sys.exit()
-        print i, j
-        print " "
-        print " "
-        print " "
-        print " "
-        print " "
+        print(i, j)
+        print(" ")
+        print(" ")
+        print(" ")
+        print(" ")
+        print(" ")
         x, y,y_err=stack_ramps_and_plot (ax1, ramps_dict_all_jay_mean_signal, ramps_dict_all_jay, 'k-o', counter_pixel, label="All", title='Second metric (Jay)') #'%g'%st_vec[counter_pixel-1])
         #stack_ramps_and_plot (ax1, ramps_dict_fbin1, 'r-o', counter_pixel, label='')# label="%g e$^-$ $\leq$ $Z$ $<$ %g e$^-$"%(cut1, cut2))
         #stack_ramps_and_plot (ax1, ramps_dict_fbin2, 'b-o', counter_pixel, label='')#label="%g e$^-$ $\leq$ $Z$ $<$ %g e$^-$"%(cut2,cut3))
@@ -2972,7 +2973,7 @@ f.close()
 
 
 
-print " BEFORE THE END OF THE CODE!!!!!! "
+print(" BEFORE THE END OF THE CODE!!!!!! ")
 
 fig=plt.figure()
 dict=plot_surrounding_pixels (fig, ramps_dict_all_jay,'k-o', label=" ")   # returns dictionary with data to plot:  1=(x,y,yerr)
@@ -2983,7 +2984,7 @@ dict=plot_surrounding_pixels (fig, ramps_dict_all_jay,'k-o', label=" ")   # retu
 plt.tight_layout()
 pp.savefig()
 
-print dict
+print(dict)
 
 f=open(out_dir+'jay_metric_surrounding.dat', 'w')
 for key in dict:
@@ -2996,7 +2997,7 @@ for key in dict:
 f.close()
 
 
-print "IN BETWEEN PLOTTING"
+print("IN BETWEEN PLOTTING")
 
 fig=plt.figure()
 plot_all_pixels (fig, ramps_dict_all_jay,'k-o', label="All")
@@ -3005,6 +3006,6 @@ plot_all_pixels (fig, ramps_dict_all_jay,'k-o', label="All")
 #plot_all_pixels (fig, ramps_dict_fbin3,'g-o', label='')#, label="%g e$^-$ $\leq$ $Z$ $<$ %g e$^-$"%(cut3,cut4))
 #plt.suptitle("Jay's metric")
 pp.savefig()
-print "END OF PROGRAM."
+print("END OF PROGRAM.")
 
 pp.close()

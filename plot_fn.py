@@ -18,7 +18,7 @@ import sys
 
 ### DATA
 pp=PdfPages("fn.pdf")
-print "Output PDF: fn.pdf "
+print("Output PDF: fn.pdf ")
 #### PLOTS
 #### Do the plotting here
 #plt.minorticks_on()
@@ -132,8 +132,8 @@ def linear_fit (x,y,y_err):
     return pfinal[0], np.sqrt(covar[0])
 
 ### Read files
-import ConfigParser
-Config = ConfigParser.ConfigParser()
+import configparser
+Config = configparser.ConfigParser()
 Config.read("config_plot_fn.ini")
 
 sc_temp=Config.get('params', 'DoSigmaClipping')#sigma clipping?
@@ -143,7 +143,7 @@ if sc_temp == "True":
 elif sc_temp == "False":
     sc=False
 else:
-    print "Enter a valid parameter for 'DoSigmaClipping'"
+    print("Enter a valid parameter for 'DoSigmaClipping'")
     sys.exit()
     
 sigma_cut=float(Config.get('params', 'SigmaClippingCut'))
@@ -201,7 +201,7 @@ sim_nothing=read_3x3_into_dict (sim_dir_center_nothing + "/jay_metric.dat", nfra
 
 #samples=range(1, len(ppl_center_dict['1'][0]) + 1)
 
-samples= range(1, len(ppl_center_dict['2'][0]) + 1)   # THIS IS ACTUALLY MEAN SIGNAL PER FRAME ( (sample + 1 + sample) / 2) in ELECTRONS
+samples= list(range(1, len(ppl_center_dict['2'][0]) + 1))   # THIS IS ACTUALLY MEAN SIGNAL PER FRAME ( (sample + 1 + sample) / 2) in ELECTRONS
 #print ppl_center_dict['2'][2], ppl_center_dict['5'][2]
 #sys.exit()
 
@@ -233,7 +233,7 @@ for key in ppl_center_dict:
         
         
         m, m_err=linear_fit (ppl_center_dict[key][2] ,ppl_center_dict[key][0], None)
-        print "m, m_err",  m, m_err
+        print("m, m_err",  m, m_err)
         
         plt.ylim([-0.1, 0.1])
         plt.yticks([-0.1, -0.05, 0.0, 0.05, 0.1], fontsize=size_fn)
@@ -255,7 +255,7 @@ for key in ppl_center_dict:
 
         #plt.ylim([-0.1,0.1])
     elif key in ['2','4','6','8']:
-        print " "
+        print(" ")
         plt.ylim([-0.0018,0.0018])
         plt.yticks([-0.002, -0.001, 0.0, 0.001, 0.002], fontsize=size_fn)
         plt.xticks([1500,4000, 6000], fontsize=size_fn)
@@ -307,7 +307,7 @@ for key in ppl_center_dict:
     if key == '5':
         
         m, m_err=linear_fit (samples,ppl_center_dict[key][0], None)
-        print m, m_err
+        print(m, m_err)
         
         #plt.ylim([-0.023, 0.023])
         #plt.xlim([5e3,8e4])
@@ -321,7 +321,7 @@ for key in ppl_center_dict:
         
     #plt.ylim([-0.1,0.1])
     elif key in ['2','4','6','8']:
-        print " "
+        print(" ")
         #plt.ylim([-0.006,0.006])
         #plt.xlim([500,2300])
 
@@ -333,7 +333,7 @@ for key in ppl_center_dict:
         
         
     else:
-        print " "
+        print(" ")
         #plt.yticks([-0.0005, -0.00025, 0.0, 0.00025, 0.0005], fontsize=size_fn)
         #plt.xticks([500,1500,2400], fontsize=size_fn)
        
@@ -423,7 +423,7 @@ for i,data in enumerate(data_vec):
     x=data[:,2]
     y=data[:,0]
     yerr=data[:,1]
-    print c[i], y
+    print(c[i], y)
     size_final_mean=100*(y - y[0])/y[0]
     ax=fig.add_subplot(111)
     plt.errorbar (x, size_final_mean, yerr=yerr, markersize=8, fmt=c[i]+'-o', label=label_vec[i])
@@ -485,18 +485,18 @@ if sc:
   b=b[indices]
   fc=fc[indices]
 
-  print "mean b, std b, std err of mean, min, max after 3-sigma clipping: ", mean_b, sigma_b, sigma_b/np.sqrt(len(b)), np.min(b), np.max(b)
+  print("mean b, std b, std err of mean, min, max after 3-sigma clipping: ", mean_b, sigma_b, sigma_b/np.sqrt(len(b)), np.min(b), np.max(b))
 
   mean_fc, sigma_fc, indices = eu.stat.sigma_clip(fc,niter=10, nsig=sigma_cut, get_indices=True, verbose=True)
 
   b=b[indices]
   fc=fc[indices]
 
-  print "mean fc, std fc, std err of mean after 3-sigma clipping: ", mean_fc, sigma_fc, sigma_fc/np.sqrt(len(fc))
+  print("mean fc, std fc, std err of mean after 3-sigma clipping: ", mean_fc, sigma_fc, sigma_fc/np.sqrt(len(fc)))
 
-  print "new b: ", np.mean (b), np.std(b), np.std(b)/np.sqrt(len(b))
+  print("new b: ", np.mean (b), np.std(b), np.std(b)/np.sqrt(len(b)))
 
-  print "Min and max b: ", np.min(b), np.max(b)
+  print("Min and max b: ", np.min(b), np.max(b))
 
 
 
@@ -529,7 +529,7 @@ ax.set_xlabel('F_C')
 ax.set_ylabel('B, method 2')
 pp.savefig()
 #pp.close()
-print "hello"
+print("hello")
 
 
 """
@@ -672,7 +672,7 @@ mpl.rcParams['xtick.labelsize']= '10.0'
 
 
 
-print "Before Page 6 "
+print("Before Page 6 ")
 
 ################# Plot NL relative residuals for all the pixels 
 ####### PAGE 6 
@@ -721,7 +721,7 @@ pp.savefig()
 
 
 
-print "Before page 6, part 2"
+print("Before page 6, part 2")
 
 ####### PAGE 6, part 2: Absolute residuals (not relative). Note that I use (almost) the same variables as above. 
 
@@ -829,9 +829,9 @@ residual_functions_dict={'1': [], '2': [], '3': [], \
 
 ### 1. Interpolate residual funcion
 
-print "      "
+print("      ")
 from scipy.interpolate import interp1d
-print mean_y_dict, "hola"
+print(mean_y_dict, "hola")
 
 #sys.exit(1)
 
@@ -853,20 +853,20 @@ for key in residual_functions_dict:
     #print median_flux_flats, np.mean(np.abs(mean_y))
     residual_functions_dict[key]=residual
 
-    print "key, median_flux_flats, np.abs(mean_y)/100: ", key, median_flux_flats, np.abs(mean_y)/100
+    print("key, median_flux_flats, np.abs(mean_y)/100: ", key, median_flux_flats, np.abs(mean_y)/100)
 
 
 
 
     
 def get_error_no_norm_ramp (pixel_number_string, end_sample=5):
-    simulated_ramp=np.array(range(1,end_sample+1))*simulated_mean_spot_fluxes[pixel_number_string]*delta_t
-    print "key, simulated ramp: ", key, simulated_ramp
+    simulated_ramp=np.array(list(range(1,end_sample+1)))*simulated_mean_spot_fluxes[pixel_number_string]*delta_t
+    print("key, simulated ramp: ", key, simulated_ramp)
     error=simulated_ramp*residual_functions_dict[pixel_number_string](simulated_ramp)
-    print "error: ", error
+    print("error: ", error)
     vec=[]
     for i in range(len(error)-1):
-        print "pixel_number_string: ", pixel_number_string, i, (error[i+1]-error[i])/ delta_t
+        print("pixel_number_string: ", pixel_number_string, i, (error[i+1]-error[i])/ delta_t)
         vec.append((error[i+1]-error[i])/ delta_t)
 
     vec2=[]
@@ -878,7 +878,7 @@ def get_error_no_norm_ramp (pixel_number_string, end_sample=5):
 
 
 def get_residual_func (pixel_number_string, end_sample=5):
-    simulated_ramp=np.array(range(1,end_sample+1))*simulated_mean_spot_fluxes[pixel_number_string]*delta_t
+    simulated_ramp=np.array(list(range(1,end_sample+1)))*simulated_mean_spot_fluxes[pixel_number_string]*delta_t
     return residual_functions_dict[pixel_number_string](simulated_ramp)
 
 
@@ -890,7 +890,7 @@ for key in ppl_center_dict:
 
 
     error_NO_NORM[key]=get_error_no_norm_ramp(key, end_sample=nframes+1)
-    print "error_NO_NORM[key: ", error_NO_NORM[key]
+    print("error_NO_NORM[key: ", error_NO_NORM[key])
     #plt.errorbar (ppl_center_dict[key][2] , np.abs(error_NO_NORM[key]), yerr=None, fmt='r-o', markersize=5, label='NL error')
     plt.errorbar (ppl_center_dict[key][2] ,   (error_NO_NORM[key]), yerr=None, fmt='r-o', markersize=5, label='NL error')
     
@@ -922,13 +922,13 @@ for key in ppl_center_dict:
         #plt.xlim([15000, 80000])
         #plt.yticks([0.0, 50, 100, 150], fontsize=size_fn)
         #plt.xticks([1.5e4,4.5e4,7.5e4], fontsize=size_fn)
-        print " "
+        print(" ")
     elif key in ['1','3','7','9']:
         #plt.yticks([0.0, 1.0, 2.0, 3.0,4.0], fontsize=size_fn)
         #plt.xticks([500,1500,2500], fontsize=size_fn)
-        print " "
+        print(" ")
     else:
-        print " "
+        print(" ")
         #plt.xticks([2e3,5e3,8e3], fontsize=size_fn)
         #plt.yticks([0.0, 10.0, 20.0, 30.0], fontsize=size_fn)
 
@@ -946,16 +946,16 @@ fig=plt.figure()
 for key in ppl_center_dict:
     ax=fig.add_subplot(3,3,int(key))
     res[key]=get_residual_func(key, end_sample=nframes+1)
-    print "res[key]: ", res[key]
+    print("res[key]: ", res[key])
     plt.plot ( (res[key]), 'b-o', markersize=5, label='Residual function')
     
     if key == '5':
         
         m, m_err=linear_fit (samples,1000*ppl_center_dict_NO_NORM[key][0]/factor, None)
-        print m, m_err
+        print(m, m_err)
         
     else:
-        print " "
+        print(" ")
         #plt.xlim([500,2300])
 
     if key in ['1','4','7']:
@@ -974,12 +974,12 @@ for key in ppl_center_dict:
         plt.legend(loc='upper left', fancybox=True, ncol=1, numpoints=1, prop = prop, handlelength=3)
 
     if key == '5':
-        print " "
+        print(" ")
         #plt.xlim([15000, 80000])
 
 
     if key in ['2','4','6','8']:
-        print " "
+        print(" ")
         #plt.xlim([1000, 8000])
 
     ax.set_yticklabels([float(y) for y in ax.get_yticks()], visible=True, size=7)
@@ -998,7 +998,7 @@ pp.savefig()
 surr=read_surrounding_into_dict(ppl_dir_center+"/jay_metric_surrounding.dat", nframes=nframes)
 
 fig=plt.figure()
-samples=range(1, nframes+1)
+samples=list(range(1, nframes+1))
 
 ax=fig.add_subplot (1,1,1)
 ax.errorbar( samples, surr['1'][0]/factor, yerr=surr['1'][1], ecolor = 'b', fmt='b.-', markersize=12, label='', alpha=1.0)

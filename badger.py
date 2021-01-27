@@ -94,8 +94,8 @@ def makeNonlinearityTable(ramp = None, ivar = None, timeseries = None):
         bgrid[i,:,:] = bias
     else:
         alpha = np.zeros((ramp.shape[1],ramp.shape[2]))
-        for i in xrange(ramp.shape[1]):
-            for j in xrange(ramp.shape[2]):
+        for i in range(ramp.shape[1]):
+            for j in range(ramp.shape[2]):
                 # First figure out what we think the linear flux is in each pixel.
                 flux = crudeLinearFlux(pixel = ramp[:,i,j], timeseries = timeseries, polynomial_order = 2)
                 #alpha[i,j] = alpha_estimator(flux = flux,
@@ -144,7 +144,7 @@ def reference_subtraction(image, mask, n_channel = 32):
     #reference_frame = image * 0.
     channel = np.outer(np.ones(image.shape[0]), ( (col - (col % pix_per_channel)) / pix_per_channel ) )
 
-    for i in xrange(n_channel):
+    for i in range(n_channel):
         reference_pixels = (( mask & maskdef['reference']) == maskdef['reference']) & (channel == i)
         reference_frame[channel == i] = np.median(image[reference_pixels])
     
@@ -167,7 +167,7 @@ def makeFrameFromRamp(ramp = None,flat = None, ivar = None, exptime = None, nl_c
     # Do the appropriate reference image subtraction
     if ref_subtract is True:
         ramp_ref = ramp.copy()
-        for i in xrange(nframes):
+        for i in range(nframes):
             ramp_ref[i,:,:] = reference_subtraction(ramp[i,:,:], mask = mask)
         ramp = ramp_ref
     # We will assume that the entry referenced by "ramp_start" is the bias frame, and ignore everything prior.
@@ -206,8 +206,8 @@ def makeFrameFromRamp(ramp = None,flat = None, ivar = None, exptime = None, nl_c
     else:
         f = np.zeros((ramp.shape[1],ramp.shape[2]))
         logL = np.zeros((ramp.shape[1],ramp.shape[2]))
-        for i in xrange(ramp.shape[1]):
-            for j in xrange(ramp.shape[2]):
+        for i in range(ramp.shape[1]):
+            for j in range(ramp.shape[2]):
                 thisf,thisl = quad_correct(pixel_series= ramp[:,i,j],
                                       bias = bias[i,j],
                                       ivar_series = ivar[:,i,j],
@@ -239,7 +239,7 @@ def organize_ramps(files = None,  expr = '([0-9]){4}_([0-9]){4}'):
     nFiles = len(files)
     fileStr = np.empty(nFiles, dtype = [('fileName',object),('baseName',object),('mode',object),('ramp',np.int),('sample',np.int),('EXPTIME',np.float),('FRAMTIME',np.float), ('LODFILE',object)])
     for i,iFile in enumerate(files):
-        print "iFile: ", iFile
+        print("iFile: ", iFile)
         thisHdr = fits.getheader(iFile)
         fileStr['fileName'][i] = iFile
         fileStr['baseName'][i] = os.path.basename(thisHdr['BASE'])
@@ -299,12 +299,12 @@ def makeRampFromStrip(image_orig = None, n_sample_per_ramp = None, n_ramp_per_fi
     if time_axis > 1:
         raise Exception("this script expects the image to be two-dimensional, but you have supplied an image with shape "+str(image_orig.shape))
     ramp_list = []
-    for i in xrange(n_ramp_per_file):
+    for i in range(n_ramp_per_file):
         xstart = i * ramp_length
         xend = (i+1) * ramp_length
         thisImage = image[xstart:xend,:]
         thisFrames = []
-        for j in xrange(n_sample_per_ramp):
+        for j in range(n_sample_per_ramp):
             thisFrames.append(thisImage[j*frame_length:(j+1)*frame_length,:])
         frame = np.array(thisFrames)
         ramp_list.append(frame)
@@ -350,7 +350,7 @@ def makeCatalog(imageFile = None, flagFileName = None, outfileName = None, \
                                          STARNNW_NAME = nnw)
     s_engine.config['FLAG_IMAGE'] = flagFileName
     s_engine.run()
-    print "Writing catalog from "+imageFile+" to  "+outFileName
+    print("Writing catalog from "+imageFile+" to  "+outFileName)
     catalog = fits.getdata(outFileName,ext=2)
     return catalog, outfileName
 
@@ -360,7 +360,7 @@ def combine(ramps = None, exptimes = None, weights = None, ref_subtract = False,
     allFrames = []
     if len(exptimes) != len(ramps):
         exptimes = np.zeros(len(ramps)) + exptimes        
-    for i in xrange(len(ramps)):
+    for i in range(len(ramps)):
         allFrames.append( makeFrameFromRamp(ramps[i],exptime=exptimes[i], ref_subtract = ref_subtract, dark = dark, ramp_start = ramp_start) )
     finalFrame = np.average(np.stack(allFrames),axis=0, weights = weights)
     return finalFrame
@@ -483,7 +483,7 @@ def makeCorrectedFrame( files_science = None, files_dark = None, files_flat = No
         darkheader = updateHeader(darkheader, inputFiles = files_dark,imageType = 'MASTER DARK')
         fits.writeto(masterDarkOutFile,masterDark,header=darkheader,clobber=True)
     else:
-        print "not writing dark to disk"
+        print("not writing dark to disk")
     if (masterFlatOutFile is not None) and (do_flat == True):
         if type(files_flat) == type([]):
             flatheader = fits.getheader(files_flat[0])
@@ -492,10 +492,10 @@ def makeCorrectedFrame( files_science = None, files_dark = None, files_flat = No
         flatheader = updateHeader(flatheader, inputFiles = files_flat,imageType = 'MASTER FLAT')
         fits.writeto(masterFlatOutFile,masterFlat,header=flatheader,clobber=True)
     else:
-        print "not writing flat to file"
+        print("not writing flat to file")
     #--------------------------------------------------
     if do_science == False:
-        print "Skipping science frame reduction."
+        print("Skipping science frame reduction.")
         return None, None, None
     
     correctedFrames = []
@@ -519,7 +519,7 @@ def makeCorrectedFrame( files_science = None, files_dark = None, files_flat = No
             outFlagFileName = outFileTemplate+'-'+baseName+'_flags-'+str(sciStr[i]['ramp']).zfill(4)+'.fits'
             sciheader = fits.getheader(sciStr[i]['fileName'])
             sciheader = updateHeader(sciheader, inputFiles = sciStr[i]['fileName'],imageType = 'SCIENCE', masterDark=masterDarkOutFile,masterFlat=masterFlatOutFile)                 
-            print "writing to: "+outFileName
+            print("writing to: "+outFileName)
             fits.writeto(outFileName,correctedFrame,header=sciheader,clobber=True)
             fits.writeto(outFlagFileName,mask,clobber=True)
             #fits.append(outFileName,mask)
@@ -549,7 +549,7 @@ def setup(config = None):
             file_list = []
             filegroups = config.get(sec,'files').split()
             for i,group in enumerate(filegroups):
-                print "setting up parameters for "+sec+", file group "+group
+                print("setting up parameters for "+sec+", file group "+group)
                 fileNames = group.split(',')
                 for fileName in fileNames:
                     file_list = file_list + glob.glob(fileName)
@@ -578,19 +578,19 @@ def doplot(image, catalog, outfile = 'cat-overlay.pdf' ):
 
 def main(argv):
     import argparse
-    import ConfigParser
+    import configparser
     import socket
     parser = argparse.ArgumentParser(description = 'generate calibrated images of some data.')
     parser.add_argument('--config',default='default.config', help = "config file to use for processing.")
     args = parser.parse_args(argv[1:])
-    print "using configuration from: "+args.config
-    config = ConfigParser.ConfigParser()
+    print("using configuration from: "+args.config)
+    config = configparser.ConfigParser()
     config.read(args.config)
     reductionArgs = setup(config = config)
     frames, frameFiles, flagFiles = makeCorrectedFrame(**reductionArgs)
     if config.has_section('sextractor'):
         if config.get('sextractor','do sextractor') == 'True':
-            print "making catalogs."
+            print("making catalogs.")
             for thisFrame, thisFlags in zip(frameFiles,flagFiles):
                 sconfig = config.get('sextractor','sext config file')
                 spars = config.get('sextractor', 'parameters file')

@@ -51,10 +51,10 @@ def wcentroid(image, xcoords, ycoords, sigma=None, tol=1.e-4, maxnits=100, info=
             xc, yc = xc + dxc, yc + dyc
             eps2 = dxc**2 + dyc**2
             if info == True:
-                print 'wcentroid: xc = %e +- %e  yc = %e +- %e' % \
-                      (xc, dxc, yc, dyc)
+                print('wcentroid: xc = %e +- %e  yc = %e +- %e' % \
+                      (xc, dxc, yc, dyc))
             if nits == maxnits and warn == True:
-                print 'wcentroid warning: MAXNITS reached in iterative centroid search!'
+                print('wcentroid warning: MAXNITS reached in iterative centroid search!')
             nits += 1
     return xc, yc, dxc, dyc, weight, xnew, ynew
 
@@ -115,7 +115,7 @@ def measure_moments(image, sigma=None, xc_guess=None, yc_guess=None, info=False,
     # Test that image is not empty
     if (imss == 0.).all() == True:
         if warn == True:
-            print "Refusing to measure moments for all-zero image"
+            print("Refusing to measure moments for all-zero image")
         return 0., 0., 0., 0., 0., 0., 0.
     else:
         x, y = np.meshgrid(np.arange(imss.shape[1] ,dtype=float),
@@ -140,7 +140,7 @@ def measure_moments(image, sigma=None, xc_guess=None, yc_guess=None, info=False,
     # Then get the weighted second moments
         Ixx, Ixy, Iyy = wmoments(imss, xnew, ynew, weight)    
         if info == True:
-            print 'measure_moments: Ixx = %e Ixy = %e Iyy = %e' % (Ixx, Ixy, Iyy)
+            print('measure_moments: Ixx = %e Ixy = %e Iyy = %e' % (Ixx, Ixy, Iyy))
         return xorigin + xc, yorigin + yc, dxc, dyc, Ixx, Ixy, Iyy
 
 def measure_e1e2R2(image, sigma=None, xc_guess=None, yc_guess=None, info=False,
@@ -178,7 +178,7 @@ def measure_e1e2R2(image, sigma=None, xc_guess=None, yc_guess=None, info=False,
         e1 = (Ixx - Iyy) / R2
         e2 = 2. * Ixy / R2
     if info == True:
-        print 'measure_e1e2R2: e1 = %e e2 = %e R^2 = %e' % (e1, e2, R2)
+        print('measure_e1e2R2: e1 = %e e2 = %e R^2 = %e' % (e1, e2, R2))
     return e1, e2, R2, xc, yc, dxc, dyc
 
 def measure_e1e2R2_cube(cube, sigma=None, xc_guess=None, yc_guess=None, info=False,

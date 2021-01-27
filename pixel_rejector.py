@@ -8,7 +8,7 @@ from scipy import ndimage
 
 def estimateSigma(data = None, mu = 0., maxOrder = None, minOrder = None, n_iter = 1000):
     factor = 0.
-    for i in xrange(n_iter):
+    for i in range(n_iter):
         sample =  np.random.randn(data.size) + mu
         factor = factor + np.std(sample[minOrder:maxOrder])
     factor = factor*1./n_iter
@@ -31,14 +31,14 @@ def getBounds(data = None, center = None, thresh = 60,median = False):
     elif median == False:
         mode = center
     else:
-        print "using the median to center the distribution"
+        print("using the median to center the distribution")
         mode = np.median(data)
-    print "assuming mode is:",mode
+    print("assuming mode is:",mode)
     # Now assume that the data are gaussian around this point.
     dist = data - mode
     outer_bound_upper = np.percentile(np.abs(dist[dist > 0]),thresh)
     outer_bound_lower = np.percentile(np.abs(dist[dist < 0]),thresh)
-    print "upper, lower bounds:", outer_bound_upper, outer_bound_lower
+    print("upper, lower bounds:", outer_bound_upper, outer_bound_lower)
     
     window_bound = np.min([outer_bound_upper,outer_bound_lower])
     these = ((data - mode) > -window_bound) & ((data-mode) < window_bound)
@@ -95,8 +95,8 @@ def determine_quality_threshold(objval,bins,qhist, nkeep, forgive = None):
 
 def find_anomalies(data,center  = None, forgive = .25):
     sigma_est,ncore, mode, upper_bd, lower_bd = getBounds(data = data,thresh=80,median=False, center = center)
-    print "best sigma guess for sigma is:",sigma_est
-    print "number of core elements is:",ncore
+    print("best sigma guess for sigma is:",sigma_est)
+    print("number of core elements is:",ncore)
     dist = norm(loc=mode,scale=sigma_est)
     low_bd,hi_bd = dist.interval(1 - 1./data.size)
     bins = np.linspace(low_bd, hi_bd,150)
@@ -122,8 +122,8 @@ def main(argv):
     sigma_est,ncore, mode, upper_bd, lower_bd = getBounds(data = data,thresh=80,median=False)
     logL = evaluate_logL(data, sigma=sigma_est, mu = mode)
     #print "bound is:",bd
-    print "best sigma guess, sigma actual is:",sigma_est, sigma_true
-    print "number of core elements is:",ncore
+    print("best sigma guess, sigma actual is:",sigma_est, sigma_true)
+    print("number of core elements is:",ncore)
 
     # Now that we have the model fit 
     # and the log-likelihoods, figure 
@@ -135,7 +135,7 @@ def main(argv):
     dist = norm(loc=mode,scale=sigma_est)
     # thresh = 1./npts
     low_bd,hi_bd = dist.interval(1 - 1./data.size)
-    print low_bd, hi_bd
+    print(low_bd, hi_bd)
     bins = np.linspace(low_bd, hi_bd,150)
     h,_ = np.histogram(data,bins=bins,density=True)
     bin_centers = (bins[0:-1] + bins[1:])/2.
