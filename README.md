@@ -153,7 +153,7 @@ Time along the code is in miliseconds, because it is read from the files produce
 If the number of files is less than 40, take the median. If it is larger, split the list in 3, take the median of each part, and then the mean of the last 3 medians. This is to avoid running out of memory. 
 
 
-#### 6. Switch te sign of ADU (ADU-> 2^16 -1 -ADU), subtract mean of reference pixels, convert ADU to electrons
+#### 6. Switch the sign of ADU (ADU-> 2^16 -1 -ADU), subtract mean of reference pixels, convert ADU to electrons
  
 #### 7. Correct for IPC with kernel K 
 
