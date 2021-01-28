@@ -9,18 +9,19 @@ import copy
 #import utils
 #from defaults import *
 
+
 class DEFAULT:
     IMAGE = 'NONE'
     WEIGHT = 'NONE'
     CHECK = 'NONE'
     CHECK_NAME = 'NONE'
 
-    WORKING_DIR = '/'.join( os.path.realpath(__file__).split('/')[:-1] )
-    ASTRO_DIR = os.path.join( WORKING_DIR, 'astro_config' )
-    SEX_CONFIG = os.path.join( ASTRO_DIR, 'sextractor.config' )
-    SEX_PARAM = os.path.join( ASTRO_DIR, 'rrg.param' )
-    SEX_NNW = os.path.join( ASTRO_DIR, 'default.nnw' )
-    SEX_CONV = os.path.join( ASTRO_DIR, 'gauss_1.5_3x3.conv' )
+    WORKING_DIR = '/'.join(os.path.realpath(__file__).split('/')[:-1])
+    ASTRO_DIR = os.path.join(WORKING_DIR, 'astro_config')
+    SEX_CONFIG = os.path.join(ASTRO_DIR, 'sextractor.config')
+    SEX_PARAM = os.path.join(ASTRO_DIR, 'rrg.param')
+    SEX_NNW = os.path.join(ASTRO_DIR, 'default.nnw')
+    SEX_CONV = os.path.join(ASTRO_DIR, 'gauss_1.5_3x3.conv')
 
 
 class SextractorEngine():
@@ -30,7 +31,7 @@ class SextractorEngine():
         Values in the dictionary override those specified in the config file itself.  A default call to SextractorEngine will load default
         files for the sextractor config, param, nnw, and filter filters. These defaults are located in the astro_config directory packed with
         this file.
-        
+
         Technically SextractorEngine() can be called with no arguments, but the sextractor run will fail if you do not supply an image and a weight file.
         The fields that can be supplied in the constructor are the sextractor config parameters which take file paths (and CHECKIMAGE_TYPE, which is related to CHECKIMAGE_NAMES).
            IMAGE 
@@ -43,7 +44,7 @@ class SextractorEngine():
            CHECKIMAGE_TYPE
            CHECKIMAGE_NAME
         However, any other parameters available to configure sextractor can also be modified simply by adding them to the object's config dictionary. 
-       
+
         The image(s) to give to sextractor are normally only given on the command line (i.e. not in the config file). The dictionary keyword for it here is 'IMAGE'.
         When editing the dictionary do not use any -'s in the keywords. 
         For example when running 'sex image.fits -c sex.config -WEIGHT_IMAGE weight.fits', 
@@ -73,28 +74,27 @@ class SextractorEngine():
 
     """
 
-    
-    ############ You should not need to used any of these functions. They are things which helping under the hood.
-    
+    # You should not need to used any of these functions. They are things which helping under the hood.
+
     def _catalog_name(self, image, catalog_name):
         if catalog_name is None:
-            self.config['CATALOG_NAME'] = os.path.join( os.getcwd(), image.strip().split('/')[-1].replace('.fits','.cat.fits') )
+            self.config['CATALOG_NAME'] = os.path.join(
+                os.getcwd(), image.strip().split('/')[-1].replace('.fits', '.cat.fits'))
         else:
             self.config['CATALOG_NAME'] = catalog_name
 
-    def _checkimage(self, checkimage_type, checkimage_name):        
-        if checkimage_type!='NONE':
+    def _checkimage(self, checkimage_type, checkimage_name):
+        if checkimage_type != 'NONE':
             self.config['CHECKIMAGE_TYPE'] = checkimage_type
-            if checkimage_name!='NONE':
+            if checkimage_name != 'NONE':
                 self.config['CHECKIMAGE_NAME'] = checkimage_name
             else:
                 self.auto_checkimage_name()
 
-    ################################################################################################3
-
+    # 3
 
     def __init__(self, IMAGE=DEFAULT.IMAGE, WEIGHT_IMAGE=DEFAULT.WEIGHT, CATALOG_NAME=None, c=DEFAULT.SEX_CONFIG, PARAMETERS_NAME=DEFAULT.SEX_PARAM, STARNNW_NAME=DEFAULT.SEX_NNW, FILTER_NAME=DEFAULT.SEX_CONV, CHECKIMAGE_TYPE=DEFAULT.CHECK, CHECKIMAGE_NAME=DEFAULT.CHECK_NAME, setup=None):
-        #print locals()
+        # print locals()
 
         self.config = {}
         self.config['IMAGE'] = IMAGE
@@ -104,54 +104,50 @@ class SextractorEngine():
         self.config['STARNNW_NAME'] = STARNNW_NAME
         self.config['FILTER_NAME'] = FILTER_NAME
 
-        self._catalog_name(IMAGE,CATALOG_NAME)
+        self._catalog_name(IMAGE, CATALOG_NAME)
         self._checkimage(CHECKIMAGE_TYPE, CHECKIMAGE_NAME)
 
         self.path = 'sex'
         self.setup = setup
 
-
     def Path(self, path):
         self.path = path
-
 
     def auto_checkimage_name(self, dir=None, named_by='image'):
         tlist = self.config['CHECKIMAGE_TYPE'].split(',')
         for i in range(len(tlist)):
-            tlist[i] = '_' + tlist[i].strip().replace('-','m') + '.fits'
+            tlist[i] = '_' + tlist[i].strip().replace('-', 'm') + '.fits'
 
-        stripped_cat = self._strip('CATALOG_NAME', ['.cat.fits', '.fits'] )[-1]
+        stripped_cat = self._strip('CATALOG_NAME', ['.cat.fits', '.fits'])[-1]
         stripped_image = self._strip('IMAGE', ['.fits']).split('/')[-1]
-        cat_dir = '/'.join( self.config['CATALOG_NAME'].split('/')[:-1] )
-        
-        if named_by=='image':
+        cat_dir = '/'.join(self.config['CATALOG_NAME'].split('/')[:-1])
+
+        if named_by == 'image':
             stripped = stripped_image
-        elif named_by=='catalog':
+        elif named_by == 'catalog':
             stripped = stripped_cat
 
         for i in range(len(tlist)):
             file = stripped + tlist[i]
             if dir is None:
                 d = cat_dir
-            elif type(dir)==str:
+            elif type(dir) == str:
                 d = dir
-            elif type(dir)==list:
+            elif type(dir) == list:
                 d = dir[i]
-            tlist[i] = os.path.join(d,file)
+            tlist[i] = os.path.join(d, file)
 
         nstr = ','.join(tlist)
         self.config['CHECKIMAGE_NAME'] = nstr
-    
 
     def run(self, msg=None):
         args = [self.path, self.config['IMAGE']]
         for key in list(self.config.keys()):
-            if key=='IMAGE':
+            if key == 'IMAGE':
                 continue
             else:
-                args.append( '-%s' %key )
-            args.append( str(self.config[key]) )
-   
-        
+                args.append('-%s' % key)
+            args.append(str(self.config[key]))
+
         cmd = ' '.join(args)
         os.system(cmd)
