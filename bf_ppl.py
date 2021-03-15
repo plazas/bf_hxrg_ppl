@@ -1212,9 +1212,10 @@ list_of_darks_ppl = Config.get('params', 'ListDarksPPL')
 list_of_flats_ppl = Config.get('params', 'ListFlatsPPL')
 list_of_spots_ppl = Config.get('params', 'ListSpotsPPL')
 
-list_of_darks_sims = Config.get('params', 'ListDarksSimulation')
-list_of_flats_sims = Config.get('params', 'ListFlatsSimulation')
-list_of_spots_sims = Config.get('params', 'ListSpotsSimulation')
+if simulations == True:
+    list_of_darks_sims = Config.get('params', 'ListDarksSimulation')
+    list_of_flats_sims = Config.get('params', 'ListFlatsSimulation')
+    list_of_spots_sims = Config.get('params', 'ListSpotsSimulation')
 
 print ("list_of_darks_ppl: ", list_of_darks_ppl)
 print ("list_of_flats_ppl: ", list_of_flats_ppl)
