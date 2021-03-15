@@ -1183,10 +1183,19 @@ else:
 start_sample_flats = int(Config.get('params', 'StartFrameFlats'))
 start_sample_spots = int(Config.get('params', 'StartFrameSpots'))
 
-mask_file = Config.get('params', 'BadPixelMask')
-MASK = pf.open(mask_file)[0].data
+useMask = Config.get('params', 'UseMask')
+if useMask == 'False':
+    useMask = False
+elif useMask == 'True':
+    useMask = True
+else:
+    print ("Enter 'True' or 'False' for 'UseMask' parameter")
+    sys.exit(1)
 
-npix_total = MASK.shape[0]*MASK.shape[1]
+if useMask:
+    mask_file = Config.get('params', 'BadPixelMask')
+    MASK = pf.open(mask_file)[0].data
+    npix_total = MASK.shape[0]*MASK.shape[1]
 
 centroid_threshold = float(Config.get('params', 'CentroidThreshold'))
 nl_threshold_f, nl_threshold_s = 3.0, 3.0
@@ -1212,7 +1221,7 @@ list_of_darks_ppl = Config.get('params', 'ListDarksPPL')
 list_of_flats_ppl = Config.get('params', 'ListFlatsPPL')
 list_of_spots_ppl = Config.get('params', 'ListSpotsPPL')
 
-if simulations == True:
+if simulation == True:
     list_of_darks_sims = Config.get('params', 'ListDarksSimulation')
     list_of_flats_sims = Config.get('params', 'ListFlatsSimulation')
     list_of_spots_sims = Config.get('params', 'ListSpotsSimulation')
@@ -1346,7 +1355,7 @@ print("len all Spots, allFlats, allDarks:", len(
 # Try mean of medians if number of files is larger than 40.
 
 
-if len(allSpots) < 40:
+if len(allSpots) < 60:
     temp_spots = np.median(allSpots, axis=0)
     temp_flats = np.median(allFlats, axis=0)
 else:
@@ -2055,12 +2064,13 @@ for L, (xc, yc, f, central) in enumerate(zip(x_int_filtered[:end], y_int_filtere
 
     stamp = GLOBAL_SPOTS[-1][yc-stamp_end:yc +
                              1+stamp_end, xc-stamp_end:xc+1+stamp_end]
-    #TEMP stamp_mask = MASK[yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
-    #print("stamp_mask sum: ", np.sum(stamp_mask))
-    #if not np.sum(stamp_mask) == 0:
-    #    print("Discarding spot because it has at least one bad pixel")
-    #    continue
-    # TEMP END: we don't have a 4k by 4k mask yet
+    if useMask:
+        stamp_mask = MASK[yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
+        print("stamp_mask sum: ", np.sum(stamp_mask))
+        if not np.sum(stamp_mask) == 0:
+            print("Discarding spot because it has at least one bad pixel")
+            continue
+        # Note (3/14/2021): we don't have a 4k by 4k mask yet
 
     if L in to_plot:
         plot_flag = True

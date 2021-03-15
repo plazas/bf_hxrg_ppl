@@ -263,7 +263,7 @@ def sim_reduce_ellips(path='.', groupbyfile=False):
 
     # Find all ellips_ files in PWD and load filenames into string
     filelist = glob.glob(path+'/ellips*.npy')
-    if len(filelist) is 0:
+    if len(filelist) == 0:
         exit("sim_reduce_ellipse: No files found matching ellips*.npy")
     filelist.sort()
 
