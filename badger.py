@@ -263,6 +263,7 @@ def organize_ramps(files=None,  expr='([0-9]){4}_([0-9]){4}'):
         fileStr['FRAMTIME'][i] = thisHdr['FRAMTIME']
         fileStr['LODFILE'][i] = thisHdr['LODFILE']
         if 'True' in thisHdr['FILMSTRP']:
+        #if True:
             fileStr['mode'][i] = 'Filmstrip'
             fileStr['sample'][i] = thisHdr['RAMPLEN']
         else:

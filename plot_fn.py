@@ -74,8 +74,9 @@ inset = False
 factor = 1.0
 
 
-root = "/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/"
-
+#root = "/Users/amalagon/NL_plots/ASCII_FILES_TO_PLOT/"
+# In lucius (Jan 2021):
+root = "/home/aplazas/github/bf_hxrg_ppl/ASCII_FILES_TO_PLOT/"
 # directory_with_files="H_FILTER_CENTER_PPL/"
 
 
@@ -90,7 +91,7 @@ def read_3x3_into_dict(file="", flux=False, nframes=4):
 
     for line in f:
         s = line.split(' ')
-        # print s[0]
+        #import ipdb; ipdb.set_trace()
         for i in range(1, nframes+1):
             dict[s[0]][0].append(float(s[i]))
             dict[s[0]][1].append(float(s[i+nframes]))
@@ -141,7 +142,7 @@ def linear_fit(x, y, y_err):
 
 # Read files
 Config = configparser.ConfigParser()
-Config.read("config_plot_fn.ini")
+Config.read(sys.argv[1])
 
 sc_temp = Config.get('params', 'DoSigmaClipping')  # sigma clipping?
 
@@ -192,10 +193,10 @@ ppl_center_dict = read_3x3_into_dict(
 
 #ppl_corner_dict=read_3x3_into_dict (root+"CORNER_PPL/jay_metric_corner.dat" )
 sim_center_dict = read_3x3_into_dict(
-    sim_dir_center_NL_corr + "/jay_metric_oct21.dat", nframes=nframes_sim)
+    sim_dir_center_NL_corr + "/jay_metric.dat", nframes=nframes_sim)
 
 sim_center_nc_dict = read_3x3_into_dict(
-    sim_dir_center_not_NL_corr + "/jay_metric_sim_nl_not_corr.dat", nframes=nframes_sim)
+    sim_dir_center_not_NL_corr + "/jay_metric_sim_NL_not_corr.dat", nframes=nframes_sim)
 
 sim_nothing = read_3x3_into_dict(
     sim_dir_center_nothing + "/jay_metric.dat", nframes=nframes_sim)
@@ -606,11 +607,11 @@ else:
 
 fig = fig = plt.figure()
 ax = fig.add_subplot(111)
-n, bins, patches_out = ax.hist(b2, 50, normed=False, facecolor='red', alpha=0.9, label="PPL data: \n Number of spots: %.4g \n Mean: %.4g \n Std. Dev.: %.4g \n Std. Err.: %.4g" % (
+n, bins, patches_out = ax.hist(b2, 50, density=False, facecolor='red', alpha=0.9, label="PPL data: \n Number of spots: %.4g \n Mean: %.4g \n Std. Dev.: %.4g \n Std. Err.: %.4g" % (
     len(b2), mean_b2, sigma_b2, sigma_b2/np.sqrt(len(b2))))
 ax.legend(loc='upper left', fancybox=True, ncol=1, numpoints=1, prop=prop)
 
-n, bins, patches_out = ax.hist(b2_sim, 50, normed=False, facecolor='green', alpha=0.9, label="Simulations: \n Number of spots: %.4g \n Mean: %.4g \n Std. Dev.: %.4g \n Std. Err.: %.4g" % (
+n, bins, patches_out = ax.hist(b2_sim, 50, density=False, facecolor='green', alpha=0.9, label="Simulations: \n Number of spots: %.4g \n Mean: %.4g \n Std. Dev.: %.4g \n Std. Err.: %.4g" % (
     len(b2_sim), mean_b2_sim, sigma_b2_sim, sigma_b2_sim/np.sqrt(len(b2_sim))))
 ax.legend(loc='upper left', fancybox=True, ncol=1, numpoints=1, prop=prop)
 
@@ -804,8 +805,8 @@ prop = fm.FontProperties(size=7)
 
 
 #ppl_center_dict_NO_NORM=read_3x3_into_dict (root+"PPL_DATA_NO_NORM/jay_metric.dat", flux=True)
-ppl_center_dict_NO_NORM = read_3x3_into_dict(
-    ppl_dir_center+"/jay_metric_no_NORM.dat", flux=True, nframes=nframes)
+ppl_center_dict_NO_NORM = read_3x3_into_dict(ppl_dir_center+"/jay_metric_no_norm.dat", flux=True, nframes=nframes)
+
 
 
 error_NO_NORM = {'1': [], '2': [], '3': [],
@@ -844,7 +845,8 @@ for key in residual_functions_dict:
     mean_y[0] = 0.0
 
     # residual=interp1d(median_flux_flats, np.abs(mean_y)/100) #,bounds_error=False, fill_value=np.mean(np.abs(mean_y))/100)  ## Divide by 100 because mean_y is in %
-    residual = interp1d(median_flux_flats, np.abs(mean_y)/100)
+    ### TEMP, Jan 2021: extrapolate on 
+    residual = interp1d(median_flux_flats, np.abs(mean_y)/100, fill_value= "extrapolate")
     # print median_flux_flats, np.mean(np.abs(mean_y))
     residual_functions_dict[key] = residual
 

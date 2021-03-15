@@ -1100,10 +1100,15 @@ def plot_all_pixels(fig, ramps_dict, fmt, label):
 
 ################################## 3. PARAMETERS ################################
 Config = configparser.ConfigParser()
-Config.read("config_bf_ppl.ini")
+#Config.read("config_bf_ppl.ini")
+Config.read(sys.argv[1])
+
 
 
 out_dir_root = Config.get('params', 'OutDirRoot')
+cmd = "mkdir -v %s" % (out_dir_root)
+S.Popen([cmd], shell=True, stdout=S.PIPE).communicate()[0].split()
+
 dir = Config.get('params', 'OutDirName')
 out_dir = out_dir_root+dir+"/"
 cmd = "mkdir -v %s" % (out_dir)
@@ -1203,76 +1208,6 @@ else:
 
 SEXTRACTOR = Config.get('params', 'SExtractorPath')
 
-
-# old data, 1 micron filter (Y?), used for the paper
-# list_of_darks_ppl="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-000[0-9]*.fits"   # 10 ramps of darks
-# list_of_spots_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-02[3-9][0-9]*.fits" # andres-02[1-9][0-9]*.fits, 80 ramps of spots, wlamp=180 SPOTS
-# list_of_spots_ppl_2="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-030[0-9]*.fits"  # remaining 10 (initially 100 ramps, discarded first 10)
-# list_of_flats_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-00[3-9][0-9]*.fits"  ## Pick flats away from first ramps to avoid "burn-in", flats at 120W. Discard first 10.
-# list_of_flats_ppl_2="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-010[0-9]_000*.fits"  # remaining 10, 120W
-
-
-# TEMP
-# list_of_darks_ppl="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-0009*.fits"
-# list_of_spots_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-0229*.fits"
-# list_of_flats_ppl_1="/projector/aplazas/data/WFIRST/2017-03-02/raw/andres-0044*.fits"
-
-
-# simulations
-# list_of_darks_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*BACKGROUND*_00[1-2]*.fits"
-# list_of_spots_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*OBJECT*.fits"
-# list_of_flats_sims="/projector/aplazas/"+root_sim+"_OFFSET00_LOW_NOISE_NO_NL/*FLAT*.fits"
-
-
-# New data with H filter, taken by Chaz on 2018-1-25
-# list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-01-25/raw/BFdark000*.fits"
-# list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-01-25/raw/BFspot00[5-9]*.fits"
-# list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-01-25/raw/BFflat00[5-9]*.fits"
-
-# More new data, taken by Chaz on 2018-1-30, 2018-1-31, 2018-2-1 (see PPL log),  FILMSTRIP , reset starts at 0
-# list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-01-30/DARKS/BF_Hband00[2]*.fits" # 30, 0000-0029
-# list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-01-31/SPOTS/BF_Hband00[6-9]*.fits" #100, 0000-0099
-# list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-02-01/FLATS/BF_Hband_flat00[6-9]*.fits"
-
-
-# More new data, taken by Chaz on 2018-1-30, 2018-1-31, 2018-2-1 (see PPL log),  SOLO (individual files per frame)
-
-# list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-02-01/SOLO/DARKS/*.fits" # 30*6
-# list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-02-01/SOLO/FLATS/*00[4-9]?_*.fits" # 100*6
-# list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-02-01/SOLO/SPOTS/*00[4-9]?_*.fits" # 100*6
-
-
-# FILSMTRIP, V2: time between reset and first sample to allow transients to decay. Il ne faut pas couper la pemiere sample.
-
-# list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-01-25/FILMSTRIP_V2/DARKS/BFdark00[1-2]*"
-# list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-01-25/FILMSTRIP_V2/FLATS/BFflat00[4-6]*.fits"  #6-9
-# list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-01-25/FILMSTRIP_V2/SPOTS/BFspot00[3-6]*.fits"   # 100
-# NEW DARKS, ONLY TO BE USED IN V2 MODE. Use the ones that start at 1000  (7 samples, 20 seconds). 1-100: 6 samples, 16 seconds
-# list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-02-21/DARKS_V2/BF_dark10[4-5]*.fits"
-
-
-# MORE H-band data but with mask from H-badn filter. Feweer spots, but maybe better contrast
-# FLATS:   2018-03-06/  BF_Hband_f8_cal*.fits  (100-189)
-# DARKS:  2018-03-06/  BF_dark*.fits  (0-99)
-# SPOTS:  2018-03-07/  BF_Hband_mask2_f8_nocube*.fits  (0-99, 1000-1099)
-
-# It is back to the old mask with ~18000 spots.  By eye it looks like the center/neighbor contrast will be closer to 5.  This is for f/8, and I may also get some data for f/11.
-
-# list_of_darks_ppl="/projector/aplazas/data/WFIRST/2018-03-06/DARKS/BF_dark00[3-4]*.fits"
-# list_of_flats_ppl="/projector/aplazas/data/WFIRST/2018-03-06/FLATS/BF_Hband_f8_cal01[3-8]*.fits"
-# list_of_spots_ppl="/projector/aplazas/data/WFIRST/2018-03-07/SPOTS/FIRST_SET/BF_Hband_mask2_f8_nocube00[3-9]*.fits"
-
-
-# MORE H-BAND data, this time at f-11, with old mask from h-band filter. No sphere blocking the flats like in the previous one.
-# Spots for BF:  BF_Hband_f11_nocube 0-99
-# Flats for BF:  BF_Hband_f11_nocube_horiz-flat  0-99
-# FLATS: 2018-03-16
-# SPOTS: 2018-03-15
-# ListDarksPPL: /projector/aplazas/data/WFIRST/2018-03-06/DARKS/BF_dark00[3-4]*.fits
-# ListSpotsPPL: /projector/aplazas/data/WFIRST/2018-03-15/SPOTS/BF_Hband_f11_nocube00[4-9]*.fits
-# ListFlatsPPL: /projector/aplazas/data/WFIRST/2018-03-16/FLATS/BF_Hband_f11_nocube_horiz-flat00[4-9]*.fits
-
-
 list_of_darks_ppl = Config.get('params', 'ListDarksPPL')
 list_of_flats_ppl = Config.get('params', 'ListFlatsPPL')
 list_of_spots_ppl = Config.get('params', 'ListSpotsPPL')
@@ -1321,7 +1256,25 @@ else:
     files_spots = glob.glob(list_of_spots_sims)
     files_flats = glob.glob(list_of_flats_sims)
 
+### This is for the new data, 2021, TEMP
+allDarks, allFlats, allSpots = [], [], []
+assert len(files_darks) == len(files_flats)
+assert len(files_flats) == len(files_spots)
+for (i,j,k) in zip(files_darks, files_flats, files_spots):
+    allDarks.append(pf.open(i)[0].data)
+    allFlats.append(pf.open(j)[0].data)
+    allSpots.append(pf.open(k)[0].data)
+    print ("FLAT: ", j, pf.open(j)[0].header['FRAMTIME'])
+    print ("SPOTS: ", k, pf.open(k)[0].header['FRAMTIME'])
+    print ("DARKS: ", j, pf.open(i)[0].header['FRAMTIME'])
+# Open one for FRAMTIME
+expTimes = [i*2729.90632 for i in range(10)]
 
+#import ipdb; ipdb.set_trace()
+
+### 2021
+
+'''
 allDarks, infoDarks = badger.getRampsFromFiles((files_darks))
 files_darks = 0
 
@@ -1330,8 +1283,11 @@ files_spots = 0
 
 allFlats, infoFlats = badger.getRampsFromFiles((files_flats))
 files_flats = 0
-
-
+print ("infoDarks: ", infoDarks, type(infoDarks), infoDarks.dtype)
+print ("infoSpots: ", infoSpots)
+print ("infoFlats: ", infoFlats)
+stop
+'''
 discard_spots_temp = Config.get('params', 'DiscardRampsSpots')
 discard_flats_temp = Config.get('params', 'DiscardRampsFlats')
 discard_darks_temp = Config.get('params', 'DiscardRampsDarks')
@@ -1381,7 +1337,7 @@ if examine_ramps == True:
 
 print("len all Spots, allFlats, allDarks:", len(
     allSpots), len(allFlats), len(allDarks))
-print("infoSpots: ", infoSpots)
+#print("infoSpots: ", infoSpots)
 # sys.exit()
 ################################## 5. STACK DATA ################################
 
@@ -1393,7 +1349,8 @@ if len(allSpots) < 40:
     temp_spots = np.median(allSpots, axis=0)
     temp_flats = np.median(allFlats, axis=0)
 else:
-    midpoint = len(allSpots)/4
+    midpoint = int(len(allSpots)/4)
+    print ("midPoint: ", midpoint)
     a = np.median(allSpots[:midpoint], axis=0)
     b = np.median(allSpots[midpoint:2*midpoint], axis=0)
     c = np.median(allSpots[2*midpoint:3*midpoint], axis=0)
@@ -1538,7 +1495,7 @@ darks = []
 if not len(data_spots) == len(data_darks):
     print("len of data_spots and data_darks is different")
     sys.exit()
-
+counter=1
 for sample_s, sample_d in zip(data_spots, data_darks):
     print(" ")
     con_s = ndimage.filters.convolve(sample_s, K, mode='constant', cval=0.0)
@@ -1547,6 +1504,9 @@ for sample_s, sample_d in zip(data_spots, data_darks):
         con_s, con_d = sample_s, sample_d
     GLOBAL_SPOTS.append(con_s)
     darks.append(con_d)
+    print ("counter in GLOBAL_SPOTS: ", counter)
+    counter+=1
+print ("GLOBAL_SPOTS: ", GLOBAL_SPOTS)
 
 for sample_f in data_flats:
     print(" ")
@@ -1571,14 +1531,20 @@ allFlats = 0
 #    sys.exit(1)
 
 
-print("infoDarks['sample'][0]: ", infoDarks['sample'][0])
-print("infoFlats['sample'][0]: ", infoFlats['sample'][0])
+#print("infoDarks['sample'][0]: ", infoDarks['sample'][0])
+#print("infoFlats['sample'][0]: ", infoFlats['sample'][0])
 
 print("shapes_darks[0]: ", shapes_darks[0])
 print("shapes_flats[0]: ", shapes_spots[0])
 
 
 # FOR THE TIME VECTOR; if LODFILE is not V2, start at 0 (old data). If it is V2, start at FRAMTIME
+
+
+##### TEMP 2021: Just calculate the times from the headers (see above)
+### Times for darks should be the same for flats and spots
+
+'''
 
 # Assuming the LODFILE is the same for the flats darks, and spots.
 lodfile = infoFlats['LODFILE'][0]
@@ -1625,6 +1591,12 @@ time_flats = time_flats[start_sample_flats:end_sample_flats]
 
 
 # time_spots=time_darks
+'''
+time_darks = np.array(expTimes)
+time_darks = time_darks[start_sample_spots:end_sample_spots]
+time_flats = time_darks
+time_spots = time_darks
+
 
 print("len(time_darks), len(time_flats): ", len(time_darks), len(time_flats))
 print("len(GLOBAL_SPOTS): ", len(GLOBAL_SPOTS))
@@ -2082,11 +2054,12 @@ for L, (xc, yc, f, central) in enumerate(zip(x_int_filtered[:end], y_int_filtere
 
     stamp = GLOBAL_SPOTS[-1][yc-stamp_end:yc +
                              1+stamp_end, xc-stamp_end:xc+1+stamp_end]
-    stamp_mask = MASK[yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
-    print("stamp_mask sum: ", np.sum(stamp_mask))
-    if not np.sum(stamp_mask) == 0:
-        print("Discarding spot because it has at least one bad pixel")
-        continue
+    #TEMP stamp_mask = MASK[yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
+    #print("stamp_mask sum: ", np.sum(stamp_mask))
+    #if not np.sum(stamp_mask) == 0:
+    #    print("Discarding spot because it has at least one bad pixel")
+    #    continue
+    # TEMP END: we don't have a 4k by 4k mask yet
 
     if L in to_plot:
         plot_flag = True
