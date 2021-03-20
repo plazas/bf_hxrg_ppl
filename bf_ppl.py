@@ -61,6 +61,19 @@ loc_label = 'upper right'
 
 ################################## 2. FUNCTION DEFINITIONS ################################
 
+def plot_array(image):
+    """
+    Plot 2D np.array
+
+    Parameters
+    ----------
+    image : `numpy.array`
+        input 2D array
+    """
+    return
+    
+
+
 # @jit
 def fitfunc_m(x, m):
     # x=np.array(x)
@@ -1238,8 +1251,8 @@ print ("list_of_spots_ppl: ", list_of_spots_ppl)
 if simulation == False:
     # PPL DATA
     # Darks:
-    files_darks = glob.glob(list_of_darks_ppl)
-
+    files = glob.glob(list_of_darks_ppl)
+    files_darks = sorted(files)
     # Spots:
 
     # files1=glob.glob(list_of_spots_ppl_1)
@@ -1270,6 +1283,7 @@ else:
 allDarks, allFlats, allSpots = [], [], []
 assert len(files_darks) == len(files_flats)
 assert len(files_flats) == len(files_spots)
+counter=0
 for (i,j,k) in zip(files_darks, files_flats, files_spots):
     allDarks.append(pf.open(i)[0].data)
     allFlats.append(pf.open(j)[0].data)
@@ -1277,8 +1291,14 @@ for (i,j,k) in zip(files_darks, files_flats, files_spots):
     print ("FLAT: ", j, pf.open(j)[0].header['FRAMTIME'])
     print ("SPOTS: ", k, pf.open(k)[0].header['FRAMTIME'])
     print ("DARKS: ", j, pf.open(i)[0].header['FRAMTIME'])
-# Open one for FRAMTIME
-expTimes = [i*2729.90632 for i in range(10)]
+    counter+=1
+    if counter == 39:
+        print ("TEMP: Only reading 39 files per type for know")
+        break
+# Open one for FRAMTIME and NFRAMES
+framtime = pf.open(files_spots[0])[0].header['FRAMTIME']
+nframes =  pf.open(files_spots[0])[0].header['NFRAMES']
+expTimes = [i*framtime for i in range(nframes)]
 
 #import ipdb; ipdb.set_trace()
 
@@ -1351,10 +1371,17 @@ print("len all Spots, allFlats, allDarks:", len(
 # sys.exit()
 ################################## 5. STACK DATA ################################
 
-
 # Try mean of medians if number of files is larger than 40.
+# Set dtype='uint8' to avoid running out of memory in lucius (with cubes >~ 40 images each, 4k by 4k)
+allSpots = np.array(allSpots)
+allFlats = np.array(allFlats)
+allDarks = np.array(allDarks)
 
+temp_spots = np.median(allSpots, axis=0)
+temp_flats = np.median(allFlats, axis=0)
+temp_darks = np.median(allDarks, axis=0)
 
+"""
 if len(allSpots) < 60:
     temp_spots = np.median(allSpots, axis=0)
     temp_flats = np.median(allFlats, axis=0)
@@ -1374,14 +1401,14 @@ else:
     temp_flats = (a+b+c+d)*1./4
 
 
-if len(allDarks) < 40:
+if len(allDarks) < 60:
     temp_darks = np.median(allDarks, axis=0)
 else:
     a = np.median(allDarks[:midpoint], axis=0)
     b = np.median(allDarks[midpoint:2*midpoint], axis=0)
     c = np.median(allDarks[2*midpoint:], axis=0)
     temp_darks = (a+b+c)*1./3
-
+"""
 
 # (6, 2048, 2048) --> (sample # in ramp, y, x)
 shapes_spots = temp_spots.shape
@@ -1702,10 +1729,11 @@ gc.collect()
 if simulation == False:
 
     last = GLOBAL_SPOTS[-1]/gain
+    plot_array(last)
     print("last.shape: ", last.shape)
     cmd = "rm science_andres.fits"
     run_shell_cmd(cmd)
-    pf.writeto("science_andres.fits", last, clobber=True)
+    pf.writeto("science_andres.fits", last, overwrite=True)
     prefix = "hola"
     cmd = "%s science_andres.fits, science_andres.fits -c daofind_sex_detection.config" % (
         SEXTRACTOR)
@@ -2186,8 +2214,8 @@ for L, (xc, yc, f, central) in enumerate(zip(x_int_filtered[:end], y_int_filtere
                 # break
             print(p_spot[0])
 
-            print("time_flats, p_flat", time_flats, p_flat)
-            print("time_darks, p_spot", time_darks, p_spot)
+            print("HOLA!!!!!! time_flats, p_flat", time_flats, p_flat)
+            print("HOLA!!!!!! time_darks, p_spot", time_darks, p_spot)
 
             p_dark, cov_dark, chi2_dark, flag3, signal_dark = fit_pixel_ramp(
                 ramp=stamp_darks, time=time_darks, i=k, j=l, order=polynomial_order)
