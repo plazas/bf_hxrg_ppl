@@ -71,7 +71,6 @@ def plot_array(image):
         input 2D array
     """
     return
-    
 
 
 # @jit
@@ -488,7 +487,7 @@ def plot_ratio_ramps(all, pp=None, title='', discard=[], threshold=5e-4):
     new_all = np.array(new_all)
     num_plots = len(new_all)
     colormap = plt.cm.gist_ncar
-    #plt.gca().set_prop_cycle([colormap(i)
+    # plt.gca().set_prop_cycle([colormap(i)
     #                           for i in np.linspace(0, 0.9, num_plots)])
 
     fig = plt.figure()
@@ -553,12 +552,12 @@ def plot_ratio_ramps(all, pp=None, title='', discard=[], threshold=5e-4):
     plt.plot(last_frame_diff_vec, '.-')
     ax.set_xlabel('ramp number')
     ax.set_ylabel('last frame (e)')
-    if pp is not None :
+    if pp is not None:
         pp.savefig()
     else:
         print("Enter valid PdfPages context manager in: 'plot_ratio_ramps'")
         sys.exit()
-    print ("Exiting plot_ratio_ramps function")
+    print("Exiting plot_ratio_ramps function")
 
     return new_ramp_list
 
@@ -1116,9 +1115,8 @@ def plot_all_pixels(fig, ramps_dict, fmt, label):
 
 ################################## 3. PARAMETERS ################################
 Config = configparser.ConfigParser()
-#Config.read("config_bf_ppl.ini")
+# Config.read("config_bf_ppl.ini")
 Config.read(sys.argv[1])
-
 
 
 out_dir_root = Config.get('params', 'OutDirRoot')
@@ -1207,7 +1205,7 @@ if useMask == 'False':
 elif useMask == 'True':
     useMask = True
 else:
-    print ("Enter 'True' or 'False' for 'UseMask' parameter")
+    print("Enter 'True' or 'False' for 'UseMask' parameter")
     sys.exit(1)
 
 if useMask:
@@ -1244,9 +1242,9 @@ if simulation == True:
     list_of_flats_sims = Config.get('params', 'ListFlatsSimulation')
     list_of_spots_sims = Config.get('params', 'ListSpotsSimulation')
 
-print ("list_of_darks_ppl: ", list_of_darks_ppl)
-print ("list_of_flats_ppl: ", list_of_flats_ppl)
-print ("list_of_spots_ppl: ", list_of_spots_ppl)
+print("list_of_darks_ppl: ", list_of_darks_ppl)
+print("list_of_flats_ppl: ", list_of_flats_ppl)
+print("list_of_spots_ppl: ", list_of_spots_ppl)
 
 
 ################################# 4. LOAD DATA ################################
@@ -1284,31 +1282,31 @@ else:
     files_spots = glob.glob(list_of_spots_sims)
     files_flats = glob.glob(list_of_flats_sims)
 
-### This is for the new data, 2021, TEMP
+# This is for the new data, 2021, TEMP
 allDarks, allFlats, allSpots = [], [], []
 assert len(files_darks) == len(files_flats)
 assert len(files_flats) == len(files_spots)
-counter=0
+counter = 0
 counterMax = 43
-for (i,j,k) in zip(files_darks, files_flats, files_spots):
+for (i, j, k) in zip(files_darks, files_flats, files_spots):
     allDarks.append(pf.open(i)[0].data)
     allFlats.append(pf.open(j)[0].data)
     allSpots.append(pf.open(k)[0].data)
-    print ("FLAT: ", j, pf.open(j)[0].header['FRAMTIME'])
-    print ("SPOTS: ", k, pf.open(k)[0].header['FRAMTIME'])
-    print ("DARKS: ", j, pf.open(i)[0].header['FRAMTIME'])
-    counter+=1
+    print("FLAT: ", j, pf.open(j)[0].header['FRAMTIME'])
+    print("SPOTS: ", k, pf.open(k)[0].header['FRAMTIME'])
+    print("DARKS: ", j, pf.open(i)[0].header['FRAMTIME'])
+    counter += 1
     if counter == counterMax:
-        print (f"TEMP: Only reading {counterMax} files per type for know")
+        print(f"TEMP: Only reading {counterMax} files per type for know")
         break
 # Open one for FRAMTIME and NFRAMES
 framtime = pf.open(files_spots[0])[0].header['FRAMTIME']
-nframes =  pf.open(files_spots[0])[0].header['NFRAMES']
+nframes = pf.open(files_spots[0])[0].header['NFRAMES']
 expTimes = [i*framtime for i in range(nframes)]
 
 #import ipdb; ipdb.set_trace()
 
-### 2021
+# 2021
 
 '''
 allDarks, infoDarks = badger.getRampsFromFiles((files_darks))
@@ -1354,7 +1352,7 @@ else:
 
 # In addition to discarding first 10 ramps for burn-in (when reading the list of files above), get rid of individual ramps that dod not look like the others
 if examine_ramps == True:
-    ppExam = PdfPages (out_dir+"bf_ppl_out_examine_ramps.pdf")
+    ppExam = PdfPages(out_dir+"bf_ppl_out_examine_ramps.pdf")
     # , discard=range(0,15))#,discard=[6]) # discard=range(0,11)) #, discard=[6])
     allDarks = plot_ratio_ramps(
         allDarks, pp=ppExam, title='Darks \n%s' % list_of_darks_ppl, discard=discard_spots)
@@ -1386,28 +1384,29 @@ allSpots = np.array(allSpots)
 allFlats = np.array(allFlats)
 allDarks = np.array(allDarks)
 
-print ("Median stacking the files")
+print("Median stacking the files")
 temp_spots = np.median(allSpots, axis=0)
 temp_flats = np.median(allFlats, axis=0)
 temp_darks = np.median(allDarks, axis=0)
-print ("Done stacking the files")
+print("Done stacking the files")
 
 # Save the median files:
 cmd = "mkdir -v %s" % out_dir
 run_shell_cmd(cmd)
 dirOutFitsMedian = out_dir + "/stacked/"
-cmd = "mkdir -v %s" %dirOutFitsMedian
+cmd = "mkdir -v %s" % dirOutFitsMedian
 run_shell_cmd(cmd)
 
-nameMedianFlats=dir+"flats_median_stacked.fits"
-nameMedianSpots=dir+"spots_median_stacked.fits"
-nameMedianDarks=dir+"darks_median_stacked.fits"
+nameMedianFlats = dir+"flats_median_stacked.fits"
+nameMedianSpots = dir+"spots_median_stacked.fits"
+nameMedianDarks = dir+"darks_median_stacked.fits"
 
 pf.writeto(nameMedianFlats, temp_flats)
 pf.writeto(nameMedianSpots, temp_spots)
 pf.writeto(nameMedianDarks, temp_darks)
 
-print (f"Finished writting median image for spots, flats, darks. Saved in {dirOutFitsMedian}")
+print(
+    f"Finished writting median image for spots, flats, darks. Saved in {dirOutFitsMedian}")
 
 """
 if len(allSpots) < 60:
@@ -1489,27 +1488,28 @@ for sample in range(shapes_spots[0]):
     t_spots = (2**16-1-temp_spots[sample, :, ])
     if doReferencePixels:
         # Spots
-        print ("nref, nchan, colsperchan: ", nref, nchan, colsperchan)
+        print("nref, nchan, colsperchan: ", nref, nchan, colsperchan)
         #import ipdb; ipdb.set_trace()
         diffref = t_spots[-nref:].reshape(nref, nchan, colsperchan)
-        diffref = diffref.mean(2).mean(0)  # average last 4 rows in each channel
+        # average last 4 rows in each channel
+        diffref = diffref.mean(2).mean(0)
         # [c0,c0,...,c1,c1,...]
         diffref = np.tile(diffref, (colsperchan, 1)).T.flatten()
         for i in range(ysize):
-	    t_spots[i] -= diffre
-
+            t_spots[i] -= diffref
     data_spots[sample, :, :] = t_spots
 
 for sample in range(shapes_darks[0]):
     t_darks = (2**16-1-temp_darks[sample, :, ])
     if doReferencePixels:
         diffref = t_darks[-nref:].reshape(nref, nchan, colsperchan)
-        diffref = diffref.mean(2).mean(0)  # average last 4 rows in each channel
+        # average last 4 rows in each channel
+        diffref = diffref.mean(2).mean(0)
         # [c0,c0,...,c1,c1,...]
         diffref = np.tile(diffref, (colsperchan, 1)).T.flatten()
         for i in range(ysize):
             t_darks[i] -= diffref
-    
+
     data_darks[sample, :, :] = t_darks
 
 for sample in range(shapes_flats[0]):
@@ -1517,7 +1517,8 @@ for sample in range(shapes_flats[0]):
     if doReferencePixels:
         # Flats
         diffref = t_flats[-nref:].reshape(nref, nchan, colsperchan)
-        diffref = diffref.mean(2).mean(0)  # average last 4 rows in each channel
+        # average last 4 rows in each channel
+        diffref = diffref.mean(2).mean(0)
         # [c0,c0,...,c1,c1,...]
         diffref = np.tile(diffref, (colsperchan, 1)).T.flatten()
         for i in range(ysize):
@@ -1554,14 +1555,15 @@ data_darks = data_darks[start_sample_spots:end_sample_spots]
 #M = np.array([[0, 0.007, 0], [0.009, -0.032, 0.009], [0, 0.007, 0]])
 #I = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
 
-## From Chaz (March 2021):  IPC kernel for H4RG 18241, based on averaging the signals around ~1300 hot pixels.  Constant IPC assumed.
-#[ 0.00185  0.01413  0.00184]
-#[ 0.01924  0.9322   0.01831]
-#[ 0.0014   0.00948  0.00154]
+# From Chaz (March 2021):  IPC kernel for H4RG 18241, based on averaging the signals around ~1300 hot pixels.  Constant IPC assumed.
+# [ 0.00185  0.01413  0.00184]
+# [ 0.01924  0.9322   0.01831]
+# [ 0.0014   0.00948  0.00154]
 # Change sign to deconvolve
 
-M = np.array( [[0.00185, 0.01413, 0.00184],[0.01924, -0.0678, 0.01831], [0.0014, 0.00948, 0.00154]] )  # 1 - 0.9322 = 0.0678: centrall value
-I = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]]) 
+M = np.array([[0.00185, 0.01413, 0.00184], [0.01924, -0.0678, 0.01831],
+              [0.0014, 0.00948, 0.00154]])  # 1 - 0.9322 = 0.0678: centrall value
+I = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
 K = I-M
 print("K: ")
 print(K)
@@ -1574,7 +1576,7 @@ darks = []
 if not len(data_spots) == len(data_darks):
     print("len of data_spots and data_darks is different")
     sys.exit()
-counter=1
+counter = 1
 for sample_s, sample_d in zip(data_spots, data_darks):
     print(" ")
     con_s = ndimage.filters.convolve(sample_s, K, mode='constant', cval=0.0)
@@ -1583,9 +1585,9 @@ for sample_s, sample_d in zip(data_spots, data_darks):
         con_s, con_d = sample_s, sample_d
     GLOBAL_SPOTS.append(con_s)
     darks.append(con_d)
-    print ("counter in GLOBAL_SPOTS: ", counter)
-    counter+=1
-print ("GLOBAL_SPOTS: ", GLOBAL_SPOTS)
+    print("counter in GLOBAL_SPOTS: ", counter)
+    counter += 1
+print("GLOBAL_SPOTS: ", GLOBAL_SPOTS)
 
 for sample_f in data_flats:
     print(" ")
@@ -1620,8 +1622,8 @@ print("shapes_flats[0]: ", shapes_spots[0])
 # FOR THE TIME VECTOR; if LODFILE is not V2, start at 0 (old data). If it is V2, start at FRAMTIME
 
 
-##### TEMP 2021: Just calculate the times from the headers (see above)
-### Times for darks should be the same for flats and spots
+# TEMP 2021: Just calculate the times from the headers (see above)
+# Times for darks should be the same for flats and spots
 
 '''
 
@@ -1773,7 +1775,7 @@ if simulation == False:
     last = GLOBAL_SPOTS[-1]/gain
     plot_array(last)
     print("last.shape: ", last.shape)
-    print ("Running Source Extractor")
+    print("Running Source Extractor")
     cmd = "rm science_andres.fits"
     run_shell_cmd(cmd)
     pf.writeto("science_andres.fits", last, overwrite=True)
@@ -1860,8 +1862,8 @@ for (xc, yc) in zip(x_int, y_int):
     # To select centred and cornered spots, use the method of unweighted centroid: answers are; center: 0.0; corner: 0.707 (sqrt(2)/2).
     #import ipdb; ipdb.set_trace()
     # Need to turn into ints...again (?; Jan. 2021)
-    xc=int(xc)
-    yc=int(yc)
+    xc = int(xc)
+    yc = int(yc)
     stamp = DETECTION_GLOBAL_SPOTS[-1][yc-stamp_end:yc +
                                        1+stamp_end, xc-stamp_end:xc+1+stamp_end]
     # TEMP
@@ -2027,7 +2029,7 @@ pp.savefig()
 if stamp_string == 'three':
     #stamp_range_global_x, stamp_range_global_y, stamp_range_local = [xc-1,xc,xc+1],[yc-1,yc,yc+1], [0,1,2]
     STAMP_SIZE = 3
-    get_pixel_index = {(0, 0): 7, (0, 1): 4, (0, 2): 1, (1, 0): 8, (1, 1): 5, (1, 2): 2, (2, 0): 9, (2, 1): 6, (2, 2): 3}
+    get_pixel_index = {(0, 0): 7, (0, 1): 4, (0, 2): 1, (1, 0)                       : 8, (1, 1): 5, (1, 2): 2, (2, 0): 9, (2, 1): 6, (2, 2): 3}
     get_pair_index = {7: (0, 0), 4: (0, 1), 1: (0, 2), 8: (
         1, 0), 5: (1, 1), 2: (1, 2), 9: (2, 0), 6: (2, 1), 3: (2, 2)}
 elif stamp_string == 'five':
@@ -2136,7 +2138,8 @@ for L, (xc, yc, f, central) in enumerate(zip(x_int_filtered[:end], y_int_filtere
     stamp = GLOBAL_SPOTS[-1][yc-stamp_end:yc +
                              1+stamp_end, xc-stamp_end:xc+1+stamp_end]
     if useMask:
-        stamp_mask = MASK[yc-stamp_end:yc+1+stamp_end, xc-stamp_end:xc+1+stamp_end]
+        stamp_mask = MASK[yc-stamp_end:yc+1 +
+                          stamp_end, xc-stamp_end:xc+1+stamp_end]
         print("stamp_mask sum: ", np.sum(stamp_mask))
         if not np.sum(stamp_mask) == 0:
             print("Discarding spot because it has at least one bad pixel")
@@ -2792,7 +2795,7 @@ np.save(out_dir+'/stamps_spot.npy', np.array(SUM_STAMP_3D))
 np.save(out_dir+'/stamps_flat.npy', np.array(SUM_STAMP_3D_FLATS))
 np.save(out_dir+'/stamps_dark.npy', np.array(SUM_STAMP_3D_DARKS))
 
-#pdb.set_trace()
+# pdb.set_trace()
 
 SUM_STAMP_2D = np.array(SUM_STAMP_2D)
 MEDIAN_STAMP = np.nanmedian(SUM_STAMP_2D, axis=0)
