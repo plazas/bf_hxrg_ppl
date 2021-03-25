@@ -476,8 +476,7 @@ def twoD_Gaussian(xxx_todo_changeme, amplitude, xo, yo, sigma_x, sigma_y, theta,
     return g.ravel()
 
 
-def plot_ratio_ramps(all, title='', discard=[], threshold=5e-4):
-
+def plot_ratio_ramps(all, pp=None, title='', discard=[], threshold=5e-4):
     new_all = []
     for i, ramp in enumerate((all)):
         if not len(discard) == 0:
@@ -554,8 +553,12 @@ def plot_ratio_ramps(all, title='', discard=[], threshold=5e-4):
     plt.plot(last_frame_diff_vec, '.-')
     ax.set_xlabel('ramp number')
     ax.set_ylabel('last frame (e)')
-
-    pp.savefig()
+    if pp is not None :
+        pp.savefig()
+    else:
+        print("Enter valid PdfPages context manager in: 'plot_ratio_ramps'")
+        sys.exit()
+    print ("Exiting plot_ratio_ramps function")
 
     return new_ramp_list
 
@@ -1178,20 +1181,22 @@ else:
 
 
 simulation_temp = Config.get('params', 'Simulation')
-
 if simulation_temp == 'False':
     simulation = False
 else:
     simulation = True
 
-
 examine_ramps_temp = Config.get('params', 'ExamineRamps')
-
 if examine_ramps_temp == 'False':
     examine_ramps = False
 else:
     examine_ramps = True
 
+temp = Config.get('params', 'DoReferencePixels')
+if temp == 'False':
+    doReferencePixels = False
+else:
+    doReferencePixels = True
 
 start_sample_flats = int(Config.get('params', 'StartFrameFlats'))
 start_sample_spots = int(Config.get('params', 'StartFrameSpots'))
@@ -1284,6 +1289,7 @@ allDarks, allFlats, allSpots = [], [], []
 assert len(files_darks) == len(files_flats)
 assert len(files_flats) == len(files_spots)
 counter=0
+counterMax = 43
 for (i,j,k) in zip(files_darks, files_flats, files_spots):
     allDarks.append(pf.open(i)[0].data)
     allFlats.append(pf.open(j)[0].data)
@@ -1292,8 +1298,8 @@ for (i,j,k) in zip(files_darks, files_flats, files_spots):
     print ("SPOTS: ", k, pf.open(k)[0].header['FRAMTIME'])
     print ("DARKS: ", j, pf.open(i)[0].header['FRAMTIME'])
     counter+=1
-    if counter == 39:
-        print ("TEMP: Only reading 39 files per type for know")
+    if counter == counterMax:
+        print (f"TEMP: Only reading {counterMax} files per type for know")
         break
 # Open one for FRAMTIME and NFRAMES
 framtime = pf.open(files_spots[0])[0].header['FRAMTIME']
@@ -1348,16 +1354,17 @@ else:
 
 # In addition to discarding first 10 ramps for burn-in (when reading the list of files above), get rid of individual ramps that dod not look like the others
 if examine_ramps == True:
+    ppExam = PdfPages (out_dir+"bf_ppl_out_examine_ramps.pdf")
     # , discard=range(0,15))#,discard=[6]) # discard=range(0,11)) #, discard=[6])
     allDarks = plot_ratio_ramps(
-        allDarks, title='Darks \n%s' % list_of_darks_ppl, discard=discard_spots)
+        allDarks, pp=ppExam, title='Darks \n%s' % list_of_darks_ppl, discard=discard_spots)
     # , discard=range(0,15)+[55,57,54,59])#,discard=range(0,15) + [18]) # discard=range(70,74))     #, discard=range(1,15) + [18])
     allFlats = plot_ratio_ramps(
-        allFlats, title='Flats \n%s' % list_of_flats_ppl, discard=discard_flats)
+        allFlats, pp=ppExam, title='Flats \n%s' % list_of_flats_ppl, discard=discard_flats)
     # , discard=[4,20,22,32,33] )# , discard=range(0,15))# discard=range(0,11))#, discard=range(1,15)) #1,2,3,4,5,6,7,8,9,10,21,24,25]+[26,27,28,30,32,33,34,36,37,38,42,46,54])
     allSpots = plot_ratio_ramps(
-        allSpots, title='Spots \n%s' % list_of_spots_ppl, discard=discard_darks)
-
+        allSpots, pp=ppExam, title='Spots \n%s' % list_of_spots_ppl, discard=discard_darks)
+    ppExam.close()
     # filmstrip discard=range(0,11); discard=range(0,11)+[19,41,13,52,31], discard=range(0,15)
 
 
@@ -1373,13 +1380,34 @@ print("len all Spots, allFlats, allDarks:", len(
 
 # Try mean of medians if number of files is larger than 40.
 # Set dtype='uint8' to avoid running out of memory in lucius (with cubes >~ 40 images each, 4k by 4k)
+
+
 allSpots = np.array(allSpots)
 allFlats = np.array(allFlats)
 allDarks = np.array(allDarks)
 
+print ("Median stacking the files")
 temp_spots = np.median(allSpots, axis=0)
 temp_flats = np.median(allFlats, axis=0)
 temp_darks = np.median(allDarks, axis=0)
+print ("Done stacking the files")
+
+# Save the median files:
+cmd = "mkdir -v %s" % out_dir
+run_shell_cmd(cmd)
+dirOutFitsMedian = out_dir + "/stacked/"
+cmd = "mkdir -v %s" %dirOutFitsMedian
+run_shell_cmd(cmd)
+
+nameMedianFlats=dir+"flats_median_stacked.fits"
+nameMedianSpots=dir+"spots_median_stacked.fits"
+nameMedianDarks=dir+"darks_median_stacked.fits"
+
+pf.writeto(nameMedianFlats, temp_flats)
+pf.writeto(nameMedianSpots, temp_spots)
+pf.writeto(nameMedianDarks, temp_darks)
+
+print (f"Finished writting median image for spots, flats, darks. Saved in {dirOutFitsMedian}")
 
 """
 if len(allSpots) < 60:
@@ -1459,36 +1487,41 @@ if not shapes_flats[2] == ysize:
 # Swicth sign and correct for reference region
 for sample in range(shapes_spots[0]):
     t_spots = (2**16-1-temp_spots[sample, :, ])
-    # Spots
-    print ("nref, nchan, colsperchan: ", nref, nchan, colsperchan)
-    #import ipdb; ipdb.set_trace()
-    diffref = t_spots[-nref:].reshape(nref, nchan, colsperchan)
-    diffref = diffref.mean(2).mean(0)  # average last 4 rows in each channel
-    # [c0,c0,...,c1,c1,...]
-    diffref = np.tile(diffref, (colsperchan, 1)).T.flatten()
-    for i in range(ysize):
-        t_spots[i] -= diffref
+    if doReferencePixels:
+        # Spots
+        print ("nref, nchan, colsperchan: ", nref, nchan, colsperchan)
+        #import ipdb; ipdb.set_trace()
+        diffref = t_spots[-nref:].reshape(nref, nchan, colsperchan)
+        diffref = diffref.mean(2).mean(0)  # average last 4 rows in each channel
+        # [c0,c0,...,c1,c1,...]
+        diffref = np.tile(diffref, (colsperchan, 1)).T.flatten()
+        for i in range(ysize):
+	    t_spots[i] -= diffre
+
     data_spots[sample, :, :] = t_spots
 
 for sample in range(shapes_darks[0]):
     t_darks = (2**16-1-temp_darks[sample, :, ])
-    diffref = t_darks[-nref:].reshape(nref, nchan, colsperchan)
-    diffref = diffref.mean(2).mean(0)  # average last 4 rows in each channel
-    # [c0,c0,...,c1,c1,...]
-    diffref = np.tile(diffref, (colsperchan, 1)).T.flatten()
-    for i in range(ysize):
-        t_darks[i] -= diffref
+    if doReferencePixels:
+        diffref = t_darks[-nref:].reshape(nref, nchan, colsperchan)
+        diffref = diffref.mean(2).mean(0)  # average last 4 rows in each channel
+        # [c0,c0,...,c1,c1,...]
+        diffref = np.tile(diffref, (colsperchan, 1)).T.flatten()
+        for i in range(ysize):
+            t_darks[i] -= diffref
+    
     data_darks[sample, :, :] = t_darks
 
 for sample in range(shapes_flats[0]):
     t_flats = (2**16-1-temp_flats[sample, :, ])
-    # Flats
-    diffref = t_flats[-nref:].reshape(nref, nchan, colsperchan)
-    diffref = diffref.mean(2).mean(0)  # average last 4 rows in each channel
-    # [c0,c0,...,c1,c1,...]
-    diffref = np.tile(diffref, (colsperchan, 1)).T.flatten()
-    for i in range(ysize):
-        t_flats[i] -= diffref
+    if doReferencePixels:
+        # Flats
+        diffref = t_flats[-nref:].reshape(nref, nchan, colsperchan)
+        diffref = diffref.mean(2).mean(0)  # average last 4 rows in each channel
+        # [c0,c0,...,c1,c1,...]
+        diffref = np.tile(diffref, (colsperchan, 1)).T.flatten()
+        for i in range(ysize):
+            t_flats[i] -= diffref
     data_flats[sample, :, :] = t_flats
 
 
@@ -1517,9 +1550,18 @@ data_spots = data_spots[start_sample_spots:end_sample_spots]
 data_flats = data_flats[start_sample_flats:end_sample_flats]
 data_darks = data_darks[start_sample_spots:end_sample_spots]
 
+# For H2RG used for paper
+#M = np.array([[0, 0.007, 0], [0.009, -0.032, 0.009], [0, 0.007, 0]])
+#I = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
 
-M = np.array([[0, 0.007, 0], [0.009, -0.032, 0.009], [0, 0.007, 0]])
-I = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+## From Chaz (March 2021):  IPC kernel for H4RG 18241, based on averaging the signals around ~1300 hot pixels.  Constant IPC assumed.
+#[ 0.00185  0.01413  0.00184]
+#[ 0.01924  0.9322   0.01831]
+#[ 0.0014   0.00948  0.00154]
+# Change sign to deconvolve
+
+M = np.array( [[0.00185, 0.01413, 0.00184],[0.01924, -0.0678, 0.01831], [0.0014, 0.00948, 0.00154]] )  # 1 - 0.9322 = 0.0678: centrall value
+I = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]]) 
 K = I-M
 print("K: ")
 print(K)
@@ -1703,7 +1745,7 @@ ax = fig.add_subplot(121)
 # , vmin=mean_science - mean_science/factor, vmax=mean_science + mean_science/factor)
 ax.imshow(GLOBAL_FLATS[-1], cmap=cm.seismic,
           origin="lower", interpolation='nearest')
-ax.set_title("100 stacked images: Flats, last frame")
+ax.set_title("stacked images: Flats, last frame")
 # PCM=ax.get_children()[2] #get the mappable, the 1st and the 2nd are the x and y axes
 #plt.colorbar(PCM, ax=ax)
 
@@ -1711,7 +1753,7 @@ ax = fig.add_subplot(122)
 # , vmin=mean_science - mean_science/factor, vmax=mean_science + mean_science/factor)
 ax.imshow(GLOBAL_SPOTS[-1], cmap=cm.seismic,
           origin="lower", interpolation='nearest')
-ax.set_title("100 stacked images: Spots, last frame")
+ax.set_title("stacked images: Spots, last frame")
 # PCM=ax.get_children()[2] #get the mappable, the 1st and the 2nd are the x and y axes
 #plt.colorbar(PCM, ax=ax)
 # plt.colorbar()
@@ -1731,6 +1773,7 @@ if simulation == False:
     last = GLOBAL_SPOTS[-1]/gain
     plot_array(last)
     print("last.shape: ", last.shape)
+    print ("Running Source Extractor")
     cmd = "rm science_andres.fits"
     run_shell_cmd(cmd)
     pf.writeto("science_andres.fits", last, overwrite=True)
