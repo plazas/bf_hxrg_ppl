@@ -1287,7 +1287,7 @@ allDarks, allFlats, allSpots = [], [], []
 assert len(files_darks) == len(files_flats)
 assert len(files_flats) == len(files_spots)
 counter = 0
-counterMax = 43
+counterMax = 15
 for (i, j, k) in zip(files_darks, files_flats, files_spots):
     allDarks.append(pf.open(i)[0].data)
     allFlats.append(pf.open(j)[0].data)
@@ -1401,9 +1401,9 @@ nameMedianFlats = dir+"flats_median_stacked.fits"
 nameMedianSpots = dir+"spots_median_stacked.fits"
 nameMedianDarks = dir+"darks_median_stacked.fits"
 
-pf.writeto(nameMedianFlats, temp_flats)
-pf.writeto(nameMedianSpots, temp_spots)
-pf.writeto(nameMedianDarks, temp_darks)
+pf.writeto(nameMedianFlats, temp_flats, clobber=True)
+pf.writeto(nameMedianSpots, temp_spots, clobber=True)
+pf.writeto(nameMedianDarks, temp_darks, clobber=True)
 
 print(
     f"Finished writting median image for spots, flats, darks. Saved in {dirOutFitsMedian}")
