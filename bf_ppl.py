@@ -1196,6 +1196,12 @@ if temp == 'False':
 else:
     doReferencePixels = True
 
+temp = Config.get('params', 'UseMedianFiles')
+if temp == 'False':
+    useMedianFiles = False
+else:
+    useMedianFiles = True
+
 start_sample_flats = int(Config.get('params', 'StartFrameFlats'))
 start_sample_spots = int(Config.get('params', 'StartFrameSpots'))
 
@@ -1287,7 +1293,7 @@ allDarks, allFlats, allSpots = [], [], []
 assert len(files_darks) == len(files_flats)
 assert len(files_flats) == len(files_spots)
 counter = 0
-counterMax = 15
+counterMax = 40 
 for (i, j, k) in zip(files_darks, files_flats, files_spots):
     allDarks.append(pf.open(i)[0].data)
     allFlats.append(pf.open(j)[0].data)
@@ -1377,36 +1383,56 @@ print("len all Spots, allFlats, allDarks:", len(
 ################################## 5. STACK DATA ################################
 
 # Try mean of medians if number of files is larger than 40.
-# Set dtype='uint8' to avoid running out of memory in lucius (with cubes >~ 40 images each, 4k by 4k)
 
-
-allSpots = np.array(allSpots)
-allFlats = np.array(allFlats)
-allDarks = np.array(allDarks)
-
-print("Median stacking the files")
-temp_spots = np.median(allSpots, axis=0)
-temp_flats = np.median(allFlats, axis=0)
-temp_darks = np.median(allDarks, axis=0)
-print("Done stacking the files")
-
-# Save the median files:
 cmd = "mkdir -v %s" % out_dir
 run_shell_cmd(cmd)
 dirOutFitsMedian = out_dir + "/stacked/"
 cmd = "mkdir -v %s" % dirOutFitsMedian
 run_shell_cmd(cmd)
 
-nameMedianFlats = dir+"flats_median_stacked.fits"
-nameMedianSpots = dir+"spots_median_stacked.fits"
-nameMedianDarks = dir+"darks_median_stacked.fits"
+nameMedianFlats = dirOutFitsMedian+"flats_median_stacked.fits"
+nameMedianSpots = dirOutFitsMedian+"spots_median_stacked.fits"
+nameMedianDarks = dirOutFitsMedian+"darks_median_stacked.fits"
 
-pf.writeto(nameMedianFlats, temp_flats, clobber=True)
-pf.writeto(nameMedianSpots, temp_spots, clobber=True)
-pf.writeto(nameMedianDarks, temp_darks, clobber=True)
+if not useMedianFiles:
 
-print(
-    f"Finished writting median image for spots, flats, darks. Saved in {dirOutFitsMedian}")
+    allSpots = np.array(allSpots)
+    allFlats = np.array(allFlats)
+    allDarks = np.array(allDarks)
+
+    print("Median stacking the files")
+    temp_spots = np.median(allSpots, axis=0)
+    temp_flats = np.median(allFlats, axis=0)
+    temp_darks = np.median(allDarks, axis=0)
+    print("Done stacking the files")
+
+    # Save the median files:
+    #cmd = "mkdir -v %s" % out_dir
+    #run_shell_cmd(cmd)
+    #dirOutFitsMedian = out_dir + "/stacked/"
+    #cmd = "mkdir -v %s" % dirOutFitsMedian
+    #run_shell_cmd(cmd)
+
+    #nameMedianFlats = dirOutFitsMedian+"flats_median_stacked.fits"
+    #nameMedianSpots = dirOutFitsMedian+"spots_median_stacked.fits"
+    #nameMedianDarks = dirOutFitsMedian+"darks_median_stacked.fits"
+
+    # Use the header from the first file, and save it in the median file
+    headerFlats = pf.open(files_flats[0])[0].header
+    headerSpots = pf.open(files_spots[0])[0].header
+    headerDarks = pf.open(files_darks[0])[0].header
+
+    pf.writeto(nameMedianFlats, temp_flats, header=headerFlats, overwrite=True)
+    pf.writeto(nameMedianSpots, temp_spots, header=headerSpots, overwrite=True)
+    pf.writeto(nameMedianDarks, temp_darks, header=headerDarks, overwrite=True)
+
+    print(f"Finished writting median image for spots, flats, darks. Saved in {dirOutFitsMedian}")
+else:
+    # If the median files already exists on disk from a previous run, just read them. This saves lots of time.
+    temp_flats = pf.open(nameMedianFlats)[0].data
+    temp_spots = pf.open(nameMedianSpots)[0].data
+    temp_darks = pf.open(nameMedianDarks)[0].data
+
 
 """
 if len(allSpots) < 60:

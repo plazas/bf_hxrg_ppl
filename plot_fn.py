@@ -719,10 +719,10 @@ for i in range(1, 10):
         ax.set_xlabel('Average signal \n (e$^-$)', size=9.5)
     if i in [1, 4, 7]:
         ax.set_ylabel(r"Residual (%)", size=9)
-    plt.ylim([-0.25, 0.25])
+    #plt.ylim([-0.25, 0.25])
     #ax.set_yticklabels([float(y) for y in ax.get_yticks()], visible=True, size=7)
     plt.yticks([-0.25, 0.0, 0.25], fontsize=size_fn)
-    plt.xticks([1.0e4, 4.0e4, 7.0e4, 1.0e5], fontsize=size_fn)
+    #plt.xticks([1.0e4, 4.0e4, 7.0e4, 1.0e5], fontsize=size_fn)
 plt.tight_layout()
 pp.savefig()
 
@@ -767,10 +767,10 @@ for i in range(1, 10):
         ax.set_xlabel('Average signal \n (e$^-$)', size=9.5)
     if i in [1, 4, 7]:
         ax.set_ylabel(r"Absolute Residual", size=9)
-    plt.ylim([-20, 20])
+    #plt.ylim([-20, 20])
     #ax.set_yticklabels([float(y) for y in ax.get_yticks()], visible=True, size=7)
     #plt.yticks([-0.25, 0.0, 0.25], fontsize=size_fn)
-    plt.xticks([1.0e4, 4.0e4, 7.0e4, 1.0e5], fontsize=size_fn)
+    #plt.xticks([1.0e4, 4.0e4, 7.0e4, 1.0e5], fontsize=size_fn)
 plt.tight_layout()
 pp.savefig()
 
