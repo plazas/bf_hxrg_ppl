@@ -1293,7 +1293,7 @@ allDarks, allFlats, allSpots = [], [], []
 assert len(files_darks) == len(files_flats)
 assert len(files_flats) == len(files_spots)
 counter = 0
-counterMax = 40 
+counterMax = 50
 for (i, j, k) in zip(files_darks, files_flats, files_spots):
     allDarks.append(pf.open(i)[0].data)
     allFlats.append(pf.open(j)[0].data)
@@ -1433,6 +1433,7 @@ else:
     temp_spots = pf.open(nameMedianSpots)[0].data
     temp_darks = pf.open(nameMedianDarks)[0].data
 
+stop
 
 """
 if len(allSpots) < 60:
