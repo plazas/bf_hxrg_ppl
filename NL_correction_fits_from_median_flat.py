@@ -32,12 +32,13 @@ def plotCoeffsMatrix (coeffs, pdfPages, title=''):
                vmax=meanCoeffs + sigmaCut*meanCoeffs)
     plt.colorbar()
     ax.set_title (r"correction coeff", size=11)
+    fig.suptitle(title)
     pdfPages.savefig()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     n, bins, patches_out = ax.hist(coeffs.flatten()[mask], 50, facecolor='red',
-            alpha=0.75, label=f"Mean: {meanCoeffs:.4f} \n Scatter: {scatterCoeffs:.4f}")
+            alpha=0.75, label=f"Mean: {meanCoeffs:.4e} \n Scatter: {scatterCoeffs:.4e}")
     ax.set_title('Histogram after %g-sigma clipping' %sigmaCut, size=10)
     ax.legend(loc=loc_label , fancybox=True, ncol=1, numpoints=1, prop = prop)
     ax.tick_params(axis='both', which='major', labelsize=11.5)
