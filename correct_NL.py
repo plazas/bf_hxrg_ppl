@@ -7,17 +7,17 @@ start = timeit.timeit()
 print ("Reading files")
 spotsFile = "/projector/aplazas/stacked/2021MAR29/spots_median_stacked.fits"
 hdulist = pf.open(spotsFile)
-medianSpots = hdulist[0].data
+medianSpots = 2**16 - 1 - hdulist[0].data
 medianSpotsHeader = hdulist[0].header
 
 flatsFile = "/projector/aplazas/stacked/2021MAR29/flats_median_stacked.fits"
 hdulist = pf.open(flatsFile)
-medianFlats = hdulist[0].data
+medianFlats = 2**16 - 1 - hdulist[0].data
 medianFlatsHeader = hdulist[0].header
 
 darksFile = "/projector/aplazas/stacked/2021MAR29/darks_median_stacked.fits"
 hdulist = pf.open(darksFile)
-medianDarks = hdulist[0].data
+medianDarks = 2**16 - 1 - hdulist[0].data
 medianDarksHeader = hdulist[0].header
 
 end = timeit.timeit()
@@ -64,14 +64,18 @@ print (medianSpots[-1][2000,2000], correctedSpots[-1][2000,2000])
 
 print ("Writting corrected stacked files to disk")
 
+correctedSpots = 2**16 - 1 - correctedSpots
+correctedFlats = 2**16 - 1 - correctedFlats
+correctedDarks = 2**16 - 1 - correctedDarks
+
 pf.writeto ("/projector/aplazas/stacked/2021MAR29/spots_median_stacked_NL_corrected.fits",
-            correctedSpots, header=medianSpotsHeader)
+            correctedSpots, header=medianSpotsHeader, overwrite=True)
 
 pf.writeto ("/projector/aplazas/stacked/2021MAR29/darks_median_stacked_NL_corrected.fits",
-            correctedDarks, header=medianDarksHeader)
+            correctedDarks, header=medianDarksHeader, overwrite=True)
 
 pf.writeto ("/projector/aplazas/stacked/2021MAR29/flats_median_stacked_NL_corrected.fits",
-            correctedFlats, header=medianFlatsHeader)
+            correctedFlats, header=medianFlatsHeader, overwrite=True)
 
 
 

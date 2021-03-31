@@ -1280,7 +1280,6 @@ if simulation == False:
     files = glob.glob(list_of_flats_ppl)
     files_flats = sorted(files)
 
-
 else:
 
     # Use simulations
@@ -1293,7 +1292,7 @@ allDarks, allFlats, allSpots = [], [], []
 assert len(files_darks) == len(files_flats)
 assert len(files_flats) == len(files_spots)
 counter = 0
-counterMax = 40 
+counterMax = 3 
 for (i, j, k) in zip(files_darks, files_flats, files_spots):
     allDarks.append(pf.open(i)[0].data)
     allFlats.append(pf.open(j)[0].data)
@@ -1390,9 +1389,9 @@ dirOutFitsMedian = out_dir + "/stacked/"
 cmd = "mkdir -v %s" % dirOutFitsMedian
 run_shell_cmd(cmd)
 
-nameMedianFlats = dirOutFitsMedian+"flats_median_stacked.fits"
-nameMedianSpots = dirOutFitsMedian+"spots_median_stacked.fits"
-nameMedianDarks = dirOutFitsMedian+"darks_median_stacked.fits"
+nameMedianFlats = Config.get('params', 'MedianFlatsFile') #dirOutFitsMedian+"flats_median_stacked.fits"
+nameMedianSpots = Config.get('params', 'MedianSpotsFile') #dirOutFitsMedian+"spots_median_stacked.fits"
+nameMedianDarks = Config.get('params', 'MedianDarksFile') #dirOutFitsMedian+"darks_median_stacked.fits"
 
 if not useMedianFiles:
 
@@ -1512,6 +1511,7 @@ if not shapes_flats[2] == ysize:
 # Swicth sign and correct for reference region
 for sample in range(shapes_spots[0]):
     t_spots = (2**16-1-temp_spots[sample, :, ])
+    #t_spots = temp_spots[sample, :, ]
     if doReferencePixels:
         # Spots
         print("nref, nchan, colsperchan: ", nref, nchan, colsperchan)
@@ -1527,6 +1527,7 @@ for sample in range(shapes_spots[0]):
 
 for sample in range(shapes_darks[0]):
     t_darks = (2**16-1-temp_darks[sample, :, ])
+    #t_darks = temp_darks[sample, :, ]
     if doReferencePixels:
         diffref = t_darks[-nref:].reshape(nref, nchan, colsperchan)
         # average last 4 rows in each channel
@@ -1540,6 +1541,7 @@ for sample in range(shapes_darks[0]):
 
 for sample in range(shapes_flats[0]):
     t_flats = (2**16-1-temp_flats[sample, :, ])
+    #t_flats = temp_flats[sample, :, ]
     if doReferencePixels:
         # Flats
         diffref = t_flats[-nref:].reshape(nref, nchan, colsperchan)
@@ -1797,38 +1799,42 @@ gc.collect()
 
 
 if simulation == False:
+    if runSourceExtractor:
+        last = GLOBAL_SPOTS[-1]/gain
+        plot_array(last)
+        print("last.shape: ", last.shape)
+        print("Running Source Extractor")
+        cmd = "rm science_andres.fits"
+        run_shell_cmd(cmd)
+        pf.writeto("science_andres.fits", last, overwrite=True)
+        prefix = "hola"
+        cmd = "%s science_andres.fits, science_andres.fits -c daofind_sex_detection.config" % (
+            SEXTRACTOR)
+        run_shell_cmd(cmd)
+        cmd = "mkdir -v %s" % out_dir
+        run_shell_cmd(cmd)
+        out = out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
+        cmd = "mv check.fits %s/%s_check.fits" % (out_dir, prefix)
+        run_shell_cmd(cmd)
+        cmd = "mv output.cat %s" % (out)
+        run_shell_cmd(cmd)
+        cmd = "rm science_andres.fits"
+        run_shell_cmd(cmd)
 
-    last = GLOBAL_SPOTS[-1]/gain
-    plot_array(last)
-    print("last.shape: ", last.shape)
-    print("Running Source Extractor")
-    cmd = "rm science_andres.fits"
-    run_shell_cmd(cmd)
-    pf.writeto("science_andres.fits", last, overwrite=True)
-    prefix = "hola"
-    cmd = "%s science_andres.fits, science_andres.fits -c daofind_sex_detection.config" % (
-        SEXTRACTOR)
-    run_shell_cmd(cmd)
-    cmd = "mkdir -v %s" % out_dir
-    run_shell_cmd(cmd)
-    out = out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
-    cmd = "mv check.fits %s/%s_check.fits" % (out_dir, prefix)
-    run_shell_cmd(cmd)
-    cmd = "mv output.cat %s" % (out)
-    run_shell_cmd(cmd)
-    cmd = "rm science_andres.fits"
-    run_shell_cmd(cmd)
+        out = out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
 
-    out = out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
+        # Read position from detected objects catalog
+        data = np.genfromtxt(out)
+        flux_d = data[:, 0]
+        x_d = data[:, 5]
+        y_d = data[:, 6]
 
-    # REad position from detected objects catalog
-    data = np.genfromtxt(out)
-    flux_d = data[:, 0]
-    x_d = data[:, 5]
-    y_d = data[:, 6]
-
-    print(len(x_d), len(y_d))
-    positions_file = 'Source Extractor'
+        print(len(x_d), len(y_d))
+        positions_file = 'Source Extractor'
+    else:
+        # Assume that Source Extractor has Been run and that file already exists
+        # Check
+        if not os.file.exist
 else:
     # SIMULATIONS
     # positions_file="/projector/aplazas/MAY30/sextractor_positions_ppl_data_03mar17.txt"
