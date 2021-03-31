@@ -1169,6 +1169,11 @@ if correct_IPC_temp == 'False':
 else:
     correct_IPC = True
 
+temp = Config.get('params', 'RunSourceExtractor')
+if temp == 'False':
+    runSourceExtractor = False
+else:
+    runSourceExtractor = True
 
 subtract_dark_temp = Config.get('params', 'SubtractDark')
 
@@ -1799,6 +1804,8 @@ gc.collect()
 
 
 if simulation == False:
+    prefix = "hola"
+    sourceExtractorCat = out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
     if runSourceExtractor:
         last = GLOBAL_SPOTS[-1]/gain
         plot_array(last)
@@ -1807,24 +1814,21 @@ if simulation == False:
         cmd = "rm science_andres.fits"
         run_shell_cmd(cmd)
         pf.writeto("science_andres.fits", last, overwrite=True)
-        prefix = "hola"
         cmd = "%s science_andres.fits, science_andres.fits -c daofind_sex_detection.config" % (
             SEXTRACTOR)
         run_shell_cmd(cmd)
-        cmd = "mkdir -v %s" % out_dir
-        run_shell_cmd(cmd)
-        out = out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
+        sourceExtractorCat = out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
         cmd = "mv check.fits %s/%s_check.fits" % (out_dir, prefix)
         run_shell_cmd(cmd)
-        cmd = "mv output.cat %s" % (out)
+        cmd = "mv output.cat %s" % (sourceExtractorCat)
         run_shell_cmd(cmd)
         cmd = "rm science_andres.fits"
         run_shell_cmd(cmd)
 
-        out = out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
+        #out = out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
 
         # Read position from detected objects catalog
-        data = np.genfromtxt(out)
+        data = np.genfromtxt(sourceExtractorCat)
         flux_d = data[:, 0]
         x_d = data[:, 5]
         y_d = data[:, 6]
@@ -1834,7 +1838,17 @@ if simulation == False:
     else:
         # Assume that Source Extractor has Been run and that file already exists
         # Check
-        if not os.file.exist
+        sourceExtractorCat = Config.get ('params', 'SourceExtractorCatalog')
+        if not os.path.exists(sourceExtractorCat):
+            print (f"{sourceExtractorCat} catalog from Source Extractor not found.")
+            sys.exit()
+        else:
+            # Read position from detected objects catalog
+            data = np.genfromtxt(sourceExtractorCat)
+            flux_d = data[:, 0]
+            x_d = data[:, 5]
+            y_d = data[:, 6]
+            positions_file = 'Source Extractor'
 else:
     # SIMULATIONS
     # positions_file="/projector/aplazas/MAY30/sextractor_positions_ppl_data_03mar17.txt"
