@@ -1437,6 +1437,7 @@ else:
     temp_spots = pf.open(nameMedianSpots)[0].data
     temp_darks = pf.open(nameMedianDarks)[0].data
 
+stop
 
 """
 if len(allSpots) < 60:
