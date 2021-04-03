@@ -9,7 +9,7 @@ import matplotlib.font_manager as fm
 import os
 import sigma_clip
 
-def plotCoeffsMatrix (coeffs, pdfPages, title=''):
+def plotCoeffsMatrix (coeffs, pdfPages, title='', sigmaCut=3):
     """Make a histogram and a 2D plot of NL-correction coefficients
     
     Parameters
@@ -18,7 +18,7 @@ def plotCoeffsMatrix (coeffs, pdfPages, title=''):
         NL correction coefficients
     """
     fig = plt.figure()
-    sigmaCut = 3
+    sigmaCut = sigmaCut
     meanCoeffs, scatterCoeffs, mask = sigma_clip.sigma_clip(coeffs.flatten(), niter=10, 
                                                    nsig=sigmaCut, get_indices=True)
     print ("Mean and std: ", meanCoeffs, scatterCoeffs)
@@ -37,7 +37,7 @@ def plotCoeffsMatrix (coeffs, pdfPages, title=''):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    n, bins, patches_out = ax.hist(coeffs.flatten()[mask], 50, facecolor='red',
+    n, bins, patches_out = ax.hist(coeffs.flatten()[mask], 60, facecolor='red',
             alpha=0.75, label=f"Mean: {meanCoeffs:.4e} \n Scatter: {scatterCoeffs:.4e}")
     ax.set_title('Histogram after %g-sigma clipping' %sigmaCut, size=10)
     ax.legend(loc=loc_label , fancybox=True, ncol=1, numpoints=1, prop = prop)
@@ -47,10 +47,10 @@ def plotCoeffsMatrix (coeffs, pdfPages, title=''):
     pdfPages.savefig()
 
 
-def fit_pixel_ramp(medianFlatsCube, expTimes, counter=0, detSize=(4096, 4096)):
+def fit_pixel_ramp(medianFlatsCube, expTimes, counter=0, detSize=(4096, 4096), frameStart=0):
     index_x, index_y = np.unravel_index(counter, detSize)
-    polyFit, polyFitErr, chiSq, weights = irlsFit([0.0, 100.0, -1e-6, 1e-10], expTimes,
-                                                  medianFlatsCube[:, index_x, index_y],
+    polyFit, polyFitErr, chiSq, weights = irlsFit([0.0, 100.0, -1e-6, 1e-10], expTimes[frameStart:],
+                                                  medianFlatsCube[frameStart:, index_x, index_y],
                                                   funcPolynomial)
     # Correction coefficients (Eq. 37 of Jenna's paper, 3rd BFE paper from OSU group)
     k1 = polyFit[1]
@@ -62,11 +62,12 @@ def nl_function (index):
     Must have single index as input.
     """
     index_x, index_y = np.unravel_index(index, (detSizeX, detSizeY))
-    corrCoeffs = fit_pixel_ramp (medianFlatsCube, expTimes, counter=index, detSize=(detSizeX, detSizeY))
+    corrCoeffs = fit_pixel_ramp (medianFlatsCube, expTimes, counter=index,
+                                 detSize=(detSizeX, detSizeY), frameStart=1)
     return index_x, index_y, corrCoeffs[0], corrCoeffs[1] #polyFit, polyFitErr, chiSq, weights)
 
-c2MatrixFile = "./NL_C2_Coeffs.dat"
-c3MatrixFile = "./NL_C3_Coeffs.dat"
+c2MatrixFile = "./output/NL_C2_Coeffs_2021APR02.dat"
+c3MatrixFile = "./output/NL_C3_Coeffs_2021APR02.dat"
 if not (os.path.exists(c2MatrixFile) and os.path.exists(c3MatrixFile)):
     #If coeff. matrices don't exist in disk, run the fits.
     # Read in median (of 48 exposures) flat and dark
@@ -105,8 +106,8 @@ else:
     c2Matrix = np.genfromtxt (c2MatrixFile)
     c3Matrix = np.genfromtxt (c3MatrixFile)
 
-pp = PdfPages("outNLCoeffs.pdf")
-plotCoeffsMatrix (c2Matrix, pp, title="C2 coefficient (NL corr. polynomial, order=3)")
-plotCoeffsMatrix (c3Matrix, pp, title="C3 coefficient (NL corr. polynomial, order=3)")
+pp = PdfPages("./output/outNLCoeffs_2021APR02.pdf")
+plotCoeffsMatrix (c2Matrix, pp, title="C2 coefficient (NL corr. polynomial, order=3)", sigmaCut=2.5)
+plotCoeffsMatrix (c3Matrix, pp, title="C3 coefficient (NL corr. polynomial, order=3)", sigmaCut=2.5)
 pp.close()
 
