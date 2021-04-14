@@ -8,6 +8,7 @@ import pylab as plt
 import matplotlib.font_manager as fm
 import os
 import sigma_clip
+import math
 
 def plotCoeffsMatrix (coeffs, pdfPages, title='', sigmaCut=3):
     """Make a histogram and a 2D plot of NL-correction coefficients
@@ -22,14 +23,15 @@ def plotCoeffsMatrix (coeffs, pdfPages, title='', sigmaCut=3):
     meanCoeffs, scatterCoeffs, mask = sigma_clip.sigma_clip(coeffs.flatten(), niter=10, 
                                                    nsig=sigmaCut, get_indices=True)
     print ("Mean and std: ", meanCoeffs, scatterCoeffs)
-    print ("Median: ", np.median(coeffs))
+    medianCoeffs = np.median(coeffs)
+    print ("Median: ", medianCoeffs)
     prop = fm.FontProperties(size=7)
     loc_label = 'upper right'
     
     ax=fig.add_subplot(111)
     plt.imshow(coeffs, cmap='viridis', interpolation='nearest', origin='lower',
-               vmin=meanCoeffs - sigmaCut*meanCoeffs,
-               vmax=meanCoeffs + sigmaCut*meanCoeffs)
+               vmin=medianCoeffs - sigmaCut*medianCoeffs,
+               vmax=medianCoeffs + sigmaCut*medianCoeffs)
     plt.colorbar()
     ax.set_title (r"correction coeff", size=11)
     fig.suptitle(title)
@@ -37,8 +39,12 @@ def plotCoeffsMatrix (coeffs, pdfPages, title='', sigmaCut=3):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    n, bins, patches_out = ax.hist(coeffs.flatten()[mask], 60, facecolor='red',
-            alpha=0.75, label=f"Mean: {meanCoeffs:.4e} \n Scatter: {scatterCoeffs:.4e}")
+    
+    #w = 3
+    #nBins = math.ceil((coeffs.max() - coeffs.min())/w)
+    
+    n, bins, patches_out = ax.hist(coeffs.flatten()[mask], 100, facecolor='red',
+            alpha=0.7, label=f"Median: {medianCoeffs:.4e} \n Scatter: {scatterCoeffs:.4e}")
     ax.set_title('Histogram after %g-sigma clipping' %sigmaCut, size=10)
     ax.legend(loc=loc_label , fancybox=True, ncol=1, numpoints=1, prop = prop)
     ax.tick_params(axis='both', which='major', labelsize=11.5)
@@ -66,18 +72,21 @@ def nl_function (index):
                                  detSize=(detSizeX, detSizeY), frameStart=1)
     return index_x, index_y, corrCoeffs[0], corrCoeffs[1] #polyFit, polyFitErr, chiSq, weights)
 
-c2MatrixFile = "./output/NL_C2_Coeffs_2021APR02.dat"
-c3MatrixFile = "./output/NL_C3_Coeffs_2021APR02.dat"
+c2MatrixFile = "./output/NL_C2_Coeffs_2021APR14.dat"
+c3MatrixFile = "./output/NL_C3_Coeffs_2021APR14.dat"
 if not (os.path.exists(c2MatrixFile) and os.path.exists(c3MatrixFile)):
     #If coeff. matrices don't exist in disk, run the fits.
     # Read in median (of 48 exposures) flat and dark
-    hdulist = pf.open("/project/plazas/PPL/H4RG/output/2021MAR26/PPL-data-2021-02-18/stacked/flats_median_stacked.fits")
+    #hdulist = pf.open("/project/plazas/PPL/H4RG/output/2021MAR26/PPL-data-2021-02-18/stacked/flats_median_stacked.fits")
+    dirRoot = "/project/plazas/PPL/H4RG/data/stacked_files/"
+    hdulist = pf.open(dirRoot + "2021APR14-median-stacked-flats-PPL-2021-02-18.fits")
     medianFlatsCube = 2**16 - 1 - hdulist[0].data
     headerFlatsCube = hdulist[0].header
 
-    hdulist = pf.open("/project/plazas/PPL/H4RG/output/2021MAR26/PPL-data-2021-02-18/stacked/darks_median_stacked.fits")
-    medianDarksCube = 2**16 - 1 - hdulist[0].data
-    headerDarksCube = hdulist[0].header
+    #hdulist = pf.open("/project/plazas/PPL/H4RG/output/2021MAR26/PPL-data-2021-02-18/stacked/darks_median_stacked.fits")
+    #hdulist = pf.open(dirRoot + "2021APR14-median-stacked-darks-PPL-2021-02-18.fits")
+    #medianDarksCube = 2**16 - 1 - hdulist[0].data
+    #headerDarksCube = hdulist[0].header
 
     framtime = headerFlatsCube['FRAMTIME']
     nframes = headerFlatsCube['NFRAMES']
@@ -106,7 +115,7 @@ else:
     c2Matrix = np.genfromtxt (c2MatrixFile)
     c3Matrix = np.genfromtxt (c3MatrixFile)
 
-pp = PdfPages("./output/outNLCoeffs_2021APR02.pdf")
+pp = PdfPages("./output/outNLCoeffs_2021APR14.pdf")
 plotCoeffsMatrix (c2Matrix, pp, title="C2 coefficient (NL corr. polynomial, order=3)", sigmaCut=2.5)
 plotCoeffsMatrix (c3Matrix, pp, title="C3 coefficient (NL corr. polynomial, order=3)", sigmaCut=2.5)
 pp.close()
