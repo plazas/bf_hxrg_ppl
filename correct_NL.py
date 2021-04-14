@@ -27,8 +27,10 @@ print(end - start)
 
 start = timeit.timeit()
 print ("Reading coeff. matrices")
-c2Matrix = np.genfromtxt("/projector/aplazas/NL_MATRICES/2021MAR29/NL_C2_Coeffs.dat")
-c3Matrix = np.genfromtxt("/projector/aplazas/NL_MATRICES/2021MAR29/NL_C3_Coeffs.dat")
+#c2Matrix = np.genfromtxt("/projector/aplazas/NL_MATRICES/2021MAR29/NL_C2_Coeffs.dat")
+#c3Matrix = np.genfromtxt("/projector/aplazas/NL_MATRICES/2021MAR29/NL_C3_Coeffs.dat")
+c2Matrix = np.genfromtxt("/projector/aplazas/NL_MATRICES/2021APR02/NL_C2_Coeffs_2021APR02.dat")
+c3Matrix = np.genfromtxt("/projector/aplazas/NL_MATRICES/2021APR02/NL_C3_Coeffs_2021APR02.dat")
 end = timeit.timeit()
 print(end - start)
 
@@ -62,7 +64,7 @@ print ("Spots")
 print (medianSpots[-1][500,500], correctedSpots[-1][500,500])
 print (medianSpots[-1][2000,2000], correctedSpots[-1][2000,2000])
 
-print ("Writting corrected stacked files to disk")
+print ("Writting NL-corrected stacked files to disk")
 
 correctedSpots = 2**16 - 1 - correctedSpots
 correctedFlats = 2**16 - 1 - correctedFlats

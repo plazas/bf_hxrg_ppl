@@ -1437,7 +1437,7 @@ else:
     temp_spots = pf.open(nameMedianSpots)[0].data
     temp_darks = pf.open(nameMedianDarks)[0].data
 
-stop
+#stop
 
 """
 if len(allSpots) < 60:
@@ -1823,7 +1823,7 @@ if simulation == False:
         run_shell_cmd(cmd)
         cmd = "mv output.cat %s" % (sourceExtractorCat)
         run_shell_cmd(cmd)
-        cmd = "rm science_andres.fits"
+        cmd = f"mv science_andres.fits {out_dir}/."
         run_shell_cmd(cmd)
 
         #out = out_dir + '/' + prefix + '_sextractor_out_last_sample_ramp_100.param'
@@ -1836,6 +1836,7 @@ if simulation == False:
 
         print(len(x_d), len(y_d))
         positions_file = 'Source Extractor'
+         
     else:
         # Assume that Source Extractor has Been run and that file already exists
         # Check
