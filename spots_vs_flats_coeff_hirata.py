@@ -30,3 +30,4 @@ B0 = calculate_B_gaussian(sigma_PSF_PPL, aNN, 0.0)
 
 print ("B0 (no diagonal terms)", B0)
 
+print (-4*aNN)
